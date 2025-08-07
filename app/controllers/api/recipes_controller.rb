@@ -1,5 +1,4 @@
 class Api::RecipesController < ApplicationController
-
   def index
     recipes = Recipe.all.map do |recipe|
       build_json_response(recipe)
@@ -25,3 +24,4 @@ class Api::RecipesController < ApplicationController
     }
   end
 end
+
