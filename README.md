@@ -14,12 +14,17 @@ git clone https://github.com/delyjp/kurashiru-summer-internship-web-2025.git
 cd kurashiru-summer-internship-web-2025
 ```
 
-2. Docker Composeでコンテナを起動
+2. .envを作成
+```bash
+cp .env.sample .env
+```
+
+3. Docker Composeでコンテナを起動
 ```bash
 docker-compose up
 ```
 
-3. 別のターミナルでデータベースのセットアップ
+4. 別のターミナルでデータベースのセットアップ
 ```bash
 # データベースの作成
 docker-compose exec app rails db:create
@@ -31,7 +36,7 @@ docker-compose exec app rails db:migrate
 docker-compose exec app rails db:seed
 ```
 
-4. ブラウザでアクセス
+5. ブラウザでアクセス
 ```
 http://localhost:3001
 ```
