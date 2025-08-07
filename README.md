@@ -1,24 +1,59 @@
-# README
+# Kurashiru Summer Internship Web 2025
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+## セットアップ
 
-Things you may want to cover:
+### 必要な環境
+- Docker
+- Docker Compose
 
-* Ruby version
+### 起動方法
 
-* System dependencies
+1. リポジトリをクローン
+```bash
+git clone https://github.com/delyjp/kurashiru-summer-internship-web-2025.git
+cd kurashiru-summer-internship-web-2025
+```
 
-* Configuration
+2. Docker Composeでコンテナを起動
+```bash
+docker-compose up
+```
 
-* Database creation
+3. 別のターミナルでデータベースのセットアップ
+```bash
+# データベースの作成
+docker-compose exec app rails db:create
 
-* Database initialization
+# マイグレーションの実行
+docker-compose exec app rails db:migrate
 
-* How to run the test suite
+# シードデータの投入
+docker-compose exec app rails db:seed
+```
 
-* Services (job queues, cache servers, search engines, etc.)
+4. ブラウザでアクセス
+```
+http://localhost:3001
+```
 
-* Deployment instructions
+## API エンドポイント
 
-* ...
+- `GET /api/recipes` - レシピ一覧を取得
+- `GET /api/recipes/:uuid` - 特定のレシピを取得
+
+## 開発
+
+### コンテナに入る
+```bash
+docker-compose exec app /bin/bash
+```
+
+### コンテナの停止
+```bash
+docker-compose down
+```
+
+### ログの確認
+```bash
+docker-compose logs -f app
+```
