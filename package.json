@@ -1,0 +1,19 @@
+{
+	"name": "kurashiru-summer-internship-web-2025",
+	"version": "1.0.0",
+	"private": true,
+	"workspaces": [
+		"web"
+	],
+	"scripts": {
+		"dev": "npm run dev --workspace=web",
+		"build": "npm run build --workspace=web",
+		"start": "npm run start --workspace=web",
+		"lint": "biome check --write",
+		"check": "biome check",
+		"format": "biome format --write"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.0"
+	}
+}
