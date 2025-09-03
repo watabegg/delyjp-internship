@@ -71,6 +71,7 @@ npm run dev
 http://localhost:3000
 ```
 
+お疲れ様でした 🎉
 
 ## API エンドポイント
 
