@@ -6,7 +6,7 @@
 - Docker
 - Docker Compose
 
-### 起動方法
+### バックエンドの起動方法
 
 1. リポジトリをクローン
 ```bash
@@ -36,10 +36,42 @@ docker-compose exec app rails db:migrate
 docker-compose exec app rails db:seed
 ```
 
-5. ブラウザでアクセス
+5. ブラウザでアクセス。Railsが起動していることを確認
 ```
 http://localhost:3001
 ```
+
+
+### webの起動方法
+
+1. 環境構築
+
+webはDockerコンテナではなく、ローカルのNode.js環境で動かします。
+.node-versionに従い、nodeの22系をインストールしてください。また、パッケージマネージャーとしてmiseの設定ファイル(.mise.toml)を用意しています。miseを使っている場合は
+```
+mise install
+```
+でnode 22.17.0がインストールされます。
+
+2. webディレクトリでパッケージをinstall
+
+```
+npm i
+```
+
+3. webディレクトリでNext.jsを起動
+
+```
+npm run dev
+```
+
+4. ブラウザでアクセス。Railsから返却されたレシピーデーが表示されることを確認
+
+```
+http://localhost:3000
+```
+
+お疲れ様でした 🎉
 
 ## API エンドポイント
 

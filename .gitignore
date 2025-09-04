@@ -43,3 +43,5 @@ coverage
 /vendor
 .vscode/
 .cursor/rules/private
+.next/
+node_modules/
