@@ -21,5 +21,13 @@
 		"@types/react-dom": "^19",
 		"tailwindcss": "^4",
 		"typescript": "^5"
+	},
+	"optionalDependencies": {
+		"@rollup/rollup-linux-x64-gnu": "^4.6.1",
+		"@rollup/rollup-win32-x64-msvc": "^4.6.1",
+		"@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
+		"@tailwindcss/oxide-win32-x64-msvc": "^4.0.1",
+		"lightningcss-linux-x64-gnu": "^1.29.1",
+		"lightningcss-win32-x64-msvc": "^1.29.1"
 	}
 }
