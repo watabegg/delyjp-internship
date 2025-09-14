@@ -1,10 +1,10 @@
-## AI クッキングアシスタント - 4 パターンの処理フロー（API 版）
+# AI クッキングアシスタント - 4 パターンの処理フロー（API 版）
 
 ## 1. レシピ検索（recipe_search）- データ取得 → AI 回答生成パターン
 
-### フロー図
+### フロー図（レシピ検索）
 
-```
+```text
 ユーザー音声入力
 「カレーの作り方を教えて」
          ↓
@@ -55,7 +55,7 @@
   ・音声で詳細なレシピ説明を読み上げ
 ```
 
-### コード実装
+### コード実装（レシピ検索）
 
 ```typescript
 const recipeSearchTool = new DynamicStructuredTool({
@@ -105,9 +105,9 @@ app.post("/api/voice-command", async (req, res) => {
 
 ## 2. 動画検索（video_search）- 単純な操作指示パターン
 
-### フロー図
+### フロー図（動画検索）
 
-```
+```text
 ユーザー音声入力
 「ハンバーグの動画を見せて」
          ↓
@@ -130,7 +130,7 @@ app.post("/api/voice-command", async (req, res) => {
   ・「ハンバーグの動画を表示します」音声出力
 ```
 
-### コード実装
+### コード実装（動画検索）
 
 ```typescript
 const videoSearchTool = new DynamicStructuredTool({
@@ -148,9 +148,9 @@ const videoSearchTool = new DynamicStructuredTool({
 
 ## 3. 動画操作（video_control）- リアルタイム制御パターン
 
-### フロー図
+### フロー図（動画操作）
 
-```
+```text
 ユーザー音声入力
 「動画を30秒戻して」
          ↓
@@ -175,7 +175,7 @@ const videoSearchTool = new DynamicStructuredTool({
   ・「30秒巻き戻しました」音声出力
 ```
 
-### コード実装
+### コード実装（動画操作）
 
 ```typescript
 const videoControlTool = new DynamicStructuredTool({
@@ -203,9 +203,9 @@ const videoControlTool = new DynamicStructuredTool({
 
 ## 4. タイマー操作（timer_control）- 自然言語解析 → 数値変換パターン
 
-### フロー図
+### フロー図（タイマー操作）
 
-```
+```text
 ユーザー音声入力
 「5分のタイマーをセットして」
          ↓
@@ -234,7 +234,7 @@ const videoControlTool = new DynamicStructuredTool({
   ・「5分のタイマーを開始しました」音声出力
 ```
 
-### コード実装
+### コード実装（タイマー操作）
 
 ```typescript
 const timerControlTool = new DynamicStructuredTool({
@@ -271,9 +271,9 @@ function parseTimeToSeconds(timeStr: string): number {
 
 ## 5. フォールバック（generate_text_response）- 直接回答パターン
 
-### フロー図
+### フロー図（フォールバック）
 
-```
+```text
 ユーザー音声入力
 「玉ねぎはどのくらい炒めればいい？」
          ↓
@@ -296,7 +296,7 @@ function parseTimeToSeconds(timeStr: string): number {
   ・音声でメッセージを読み上げ
 ```
 
-### コード実装
+### コード実装（フォールバック）
 
 ```typescript
 // AIクッキングアシスタントクラス
