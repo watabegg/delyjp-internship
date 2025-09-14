@@ -1,32 +1,32 @@
-'use client'
+"use client";
 
-import { useEffect, ReactNode } from 'react'
-import clsx from 'clsx'
+import { useEffect, ReactNode } from "react";
+import clsx from "clsx";
 
 type DialogProps = {
-	id: string
-	title: string
-	children?: ReactNode
-	maxWidth?: string // e.g. '640px' or '40rem'; prefer className for Tailwind sizing
-	open: boolean
-	onClose: () => void
-	className?: string
-	isCloseButton?: boolean
-	noPadding?: boolean // kept for API compatibility; no default effect
-}
+	id: string;
+	title: string;
+	children?: ReactNode;
+	maxWidth?: string; // e.g. '640px' or '40rem'; prefer className for Tailwind sizing
+	open: boolean;
+	onClose: () => void;
+	className?: string;
+	isCloseButton?: boolean;
+	noPadding?: boolean; // kept for API compatibility; no default effect
+};
 
 /**
  * Dialog Component Usage Example
- * 
+ *
  * @example
  * 'use client'
- * 
+ *
  * import { useState } from "react";
  * import Dialog from "./ui/Dialog";
- * 
+ *
  * // Inside your component
  * const [isDialogOpen, setIsDialogOpen] = useState(false);
- * 
+ *
  * return (
  *   <>
  *     {attributes.video_url && (
@@ -78,26 +78,26 @@ const Dialog = ({
 }: DialogProps) => {
 	// Lock body scroll while open
 	useEffect(() => {
-		if (!open) return
-		const { body } = document
-		const prev = body.style.overflow
-		body.style.overflow = 'hidden'
+		if (!open) return;
+		const { body } = document;
+		const prev = body.style.overflow;
+		body.style.overflow = "hidden";
 		return () => {
-			body.style.overflow = prev
-		}
-	}, [open])
+			body.style.overflow = prev;
+		};
+	}, [open]);
 
 	// Close on ESC
 	useEffect(() => {
-		if (!open) return
+		if (!open) return;
 		const onKeyDown = (e: KeyboardEvent) => {
-			if (e.key === 'Escape') onClose()
-		}
-		window.addEventListener('keydown', onKeyDown)
-		return () => window.removeEventListener('keydown', onKeyDown)
-	}, [open, onClose])
+			if (e.key === "Escape") onClose();
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [open, onClose]);
 
-	if (!open) return null
+	if (!open) return null;
 
 	return (
 		<div
@@ -110,7 +110,7 @@ const Dialog = ({
 			<div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
 			<div
-				className={clsx('relative z-10', className)}
+				className={clsx("relative z-10", className)}
 				style={maxWidth ? { maxWidth } : undefined}
 				onClick={(e) => e.stopPropagation()}
 			>
@@ -127,7 +127,7 @@ const Dialog = ({
 				{children}
 			</div>
 		</div>
-	)
-}
+	);
+};
 
-export default Dialog
+export default Dialog;
