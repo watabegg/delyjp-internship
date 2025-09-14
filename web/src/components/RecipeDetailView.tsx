@@ -9,6 +9,7 @@ import InstructionDialog, {
 	cuttingMethodOptions,
 	getInstructionVideoUrl,
 } from "./InstructionDialog";
+import TimerDialog from "./TimerDialog";
 
 export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 	const { attributes } = recipe;
@@ -16,6 +17,7 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 		"",
 	);
 	const [isInstructionOpen, setIsInstructionOpen] = useState(false);
+	const [isTimerOpen, setIsTimerOpen] = useState(false);
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -95,6 +97,16 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 								切り方を確認
 							</button>
 						</div>
+						{/* タイマー起動 */}
+						<div className="mt-4">
+							<button
+								type="button"
+								onClick={() => setIsTimerOpen(true)}
+								className="inline-flex items-center justify-center rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+							>
+								タイマーを開始（5分）
+							</button>
+						</div>
 					</div>
 					<aside className="md:col-span-1 space-y-4">
 						<div className="bg-white p-4 rounded-md shadow">
@@ -159,6 +171,12 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 					open={isInstructionOpen}
 					onClose={() => setIsInstructionOpen(false)}
 					method={selectedMethod || null}
+				/>
+				{/* タイマーダイアログ */}
+				<TimerDialog
+					open={isTimerOpen}
+					onClose={() => setIsTimerOpen(false)}
+					seconds={3} // 例: 5分
 				/>
 			</div>
 		</div>
