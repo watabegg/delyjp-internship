@@ -2,41 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import type { ServerMessage } from "@/types/express";
 import type { RecipeDetail } from "@/types/recipe";
 import ActionRenderer from "./ActionRenderer";
 import AudioSynthesize from "./AudioSynthesize";
 import { VideoController } from "./VideoController";
 
-const examplesServerMessage: ServerMessage[] = [
-	{
-		kind: "timer",
-		payload: { method: "START", seconds: 300 },
-	},
-	{
-		kind: "methodToVideo",
-		payload: { method: "START", videoType: "chop" },
-	},
-	{
-		kind: "videoControll",
-		payload: { instruction: "PAUSE", time: 60 },
-	},
-	{
-		kind: "withTalkUser",
-		payload: { talkMessage: "こんにちは" },
-	},
-	{
-		kind: "error",
-		payload: { message: "エラーが発生しました" },
-	},
-];
-
-export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
+export function RecipeDetailView({
+	recipe,
+	message,
+}: {
+	recipe: RecipeDetail;
+	message: ServerMessage | null;
+}) {
 	const { attributes } = recipe;
-	const [selectedMessage, setSelectedMessage] = useState<ServerMessage | null>(
-		null,
-	);
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -51,12 +30,12 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 				</h1>
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 					<div className="md:col-span-2">
-						<div className="relative w-full bg-black aspect-video">
+						<div className="relative w-full bg-black">
 							{attributes.video_url ? (
 								<VideoController
 									recipeId={recipe.id}
 									videoSrc={attributes.video_url}
-									className="w-full h-full aspect-video"
+									className="w-full h-full"
 								/>
 							) : attributes.thumbnail_url ? (
 								<Image
@@ -76,20 +55,8 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 								{attributes.description}
 							</p>
 						)}
-						<div className="mt-6 space-x-2">
-							{examplesServerMessage.map((msg) => (
-								<button
-									key={`${msg.kind}-${JSON.stringify(msg.payload)}`}
-									type="button"
-									onClick={() => setSelectedMessage(msg)}
-									className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-								>
-									{msg.kind} を実行
-								</button>
-							))}
-						</div>
-						{selectedMessage && (
-							<ActionRenderer message={selectedMessage} recipeId={recipe.id} />
+						{message && (
+							<ActionRenderer message={message} recipeId={recipe.id} />
 						)}
 					</div>
 					<aside className="md:col-span-1 space-y-4">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import ActionRenderer from "@/components/ActionRenderer";
 import { RecipeDetailView } from "@/components/RecipeDetailView";
 import type { ServerMessage } from "@/types/express";
 import { type CuttingMethodKey, methodToVideoUrl } from "@/types/express";
@@ -24,8 +23,8 @@ function buildMockRecipe(): RecipeDetail {
 			instructions: ["材料を切る", "フライパンで炒める", "味を整える"],
 			tips: ["強火にしすぎない", "塩は最後に入れる"],
 			review_score: 4.5,
-			// 公開テスト動画（汎用サンプル）
-			video_url: "https://www.w3schools.com/html/mov_bbb.mp4",
+			video_url:
+				"https://video.kurashiru.com/production/videos/013adbe4-3f17-4915-988e-e8e4dd4b1322/original.mp4",
 			thumbnail_url: null,
 			category: ["テスト", "デモ"],
 			comment: ["おいしかった", "簡単でした"],
@@ -104,11 +103,19 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 		},
 	);
 
-	// withTalkUser (現在のUIでは副作用なしだが、受信時の安定性確認)
-	messages.push({
-		label: "withTalkUser 'こんにちは'",
-		message: { kind: "withTalkUser", payload: { talkMessage: "こんにちは" } },
-	});
+	messages.push(
+		{
+			label: "withTalkUser 'こんにちは'",
+			message: { kind: "withTalkUser", payload: { talkMessage: "こんにちは" } },
+		},
+		{
+			label: "withTalkUser '次の手順を教えて'",
+			message: {
+				kind: "withTalkUser",
+				payload: { talkMessage: "次の手順を教えて" },
+			},
+		},
+	);
 
 	// error (現在のUIでは副作用なしだが、受信時の安定性確認)
 	messages.push({
@@ -138,7 +145,7 @@ export default function TestPage() {
 
 				<section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 					<div className="lg:col-span-2">
-						<RecipeDetailView recipe={recipe} />
+						<RecipeDetailView recipe={recipe} message={selected} />
 					</div>
 
 					<aside className="lg:col-span-1">
@@ -168,11 +175,6 @@ export default function TestPage() {
 								))}
 							</ul>
 						</div>
-
-						{/* 実際の実行結果をこのレベルでレンダリング */}
-						{selected && (
-							<ActionRenderer message={selected} recipeId={recipe.id} />
-						)}
 					</aside>
 				</section>
 

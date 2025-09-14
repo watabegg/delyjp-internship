@@ -28,6 +28,9 @@ export default function ActionRenderer({
 			const { method, seconds } = message.payload;
 			if (method === "START") setUi({ type: "timer", seconds });
 			if (method === "STOP")
+				// 現在の実装は STOP でも閉じる
+				setUi((prev) => (prev?.type === "timer" ? null : prev));
+			if (method === "CLOSE")
 				setUi((prev) => (prev?.type === "timer" ? null : prev));
 			return;
 		}
@@ -36,6 +39,10 @@ export default function ActionRenderer({
 			const { method, videoType } = message.payload;
 			if (method === "START") setUi({ type: "instruction", method: videoType });
 			if (method === "STOP")
+				// 現在の実装は STOP でも閉じる
+				setUi((prev) => (prev?.type === "instruction" ? null : prev));
+			// 将来的に CLOSE を別途扱う場合に備えて分離
+			if (method === "CLOSE")
 				setUi((prev) => (prev?.type === "instruction" ? null : prev));
 			return;
 		}
@@ -43,6 +50,15 @@ export default function ActionRenderer({
 		if (isMessageKind(message, "videoControll")) {
 			const { instruction, time } = message.payload;
 			void apiPost(LOCAL_API.videos.control, { instruction, time, recipeId });
+			return;
+		}
+
+		if (isMessageKind(message, "withTalkUser")) {
+			const { talkMessage } = message.payload;
+			void apiPost(LOCAL_API.tts.speak, {
+				text: talkMessage,
+				action: "send",
+			});
 			return;
 		}
 

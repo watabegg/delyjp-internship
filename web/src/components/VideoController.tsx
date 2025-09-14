@@ -212,7 +212,7 @@ export function VideoController({
 	}, []);
 
 	return (
-		<div className="relative">
+		<>
 			<video
 				ref={videoRef}
 				className={className}
@@ -233,6 +233,6 @@ export function VideoController({
 					⚠️ 動画をクリックして最初に再生してから、音声コマンドをお試しください
 				</div>
 			)}
-		</div>
+		</>
 	);
 }

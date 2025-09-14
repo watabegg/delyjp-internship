@@ -1,4 +1,4 @@
-import { RecipeDetailView } from "@/components/RecipeDetailView";
+import { RecipeDetailWrapper } from "@/components/RecipeDetailWrapper";
 import { apiGet } from "@/lib/api/client";
 import { LOCAL_API } from "@/lib/constants";
 import type { RecipeDetail } from "@/types/recipe";
@@ -14,5 +14,5 @@ export default async function RecipeDetailPage({
 }) {
 	const { id } = await params;
 	const recipe = await getRecipe(id);
-	return <RecipeDetailView recipe={recipe} />;
+	return <RecipeDetailWrapper recipe={recipe} />;
 }

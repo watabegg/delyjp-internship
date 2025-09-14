@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useRecorder } from "@/hooks/useRecorder";
+import type { ServerMessage } from "@/types/express";
 
 export type VoiceStatus =
 	| "disconnected"
@@ -21,7 +22,7 @@ export type VoiceStatus =
 export function useVoiceSession(opts?: {
 	onStatusChange?: (s: VoiceStatus) => void;
 	onTranscript?: (t: string) => void;
-	onResponse?: (t: string) => void;
+	onResponse?: (t: ServerMessage) => void;
 }) {
 	const { onStatusChange, onTranscript, onResponse } = opts || {};
 	const [status, setStatus] = useState<VoiceStatus>("disconnected");
@@ -38,6 +39,7 @@ export function useVoiceSession(opts?: {
 	const connect = () => {
 		if (socketRef.current?.connected) return;
 		setS("connecting");
+		// ssr対応
 		const url =
 			typeof window !== "undefined"
 				? "http://localhost:3002"
@@ -69,7 +71,8 @@ export function useVoiceSession(opts?: {
 		});
 
 		socketRef.current.on("response_done", () => {
-			onResponse?.(response);
+			// ここ本当はresponseのtextを成形したうえでServerMessageになっているかの検証をしたい
+			onResponse?.(response as unknown as ServerMessage);
 			setResponse("");
 			setS("connected");
 		});
