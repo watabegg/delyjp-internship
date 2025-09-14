@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, ReactNode } from "react";
 import clsx from "clsx";
+import { type ReactNode, useEffect } from "react";
 
 type DialogProps = {
 	id: string;
@@ -107,12 +107,17 @@ const Dialog = ({
 			aria-label={title}
 			className="fixed inset-0 z-50 flex items-center justify-center"
 		>
-			<div className="absolute inset-0 bg-black/50" onClick={onClose} />
+			{/* Backdrop: use semantic button for a11y */}
+			<button
+				type="button"
+				className="absolute inset-0 bg-black/50 cursor-pointer"
+				aria-label="Close dialog"
+				onClick={onClose}
+			/>
 
 			<div
 				className={clsx("relative z-10", className)}
 				style={maxWidth ? { maxWidth } : undefined}
-				onClick={(e) => e.stopPropagation()}
 			>
 				{isCloseButton && (
 					<button
