@@ -1,0 +1,190 @@
+openapi: 3.0.3
+info:
+  title: HandsFree Recipe API
+  version: 1.0.0
+
+paths:
+  /recipes:
+    get:
+      summary: レシピ一覧を返すAPI
+      description: 登録されているレシピの一覧を取得する
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+          description: 取得する件数
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+          description: 取得開始位置
+      responses:
+        "200":
+          description: レシピ一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: レシピの総件数
+                  recipes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RecipeSummary"
+        "400":
+          description: 不正なリクエストパラメータ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: サーバー内部でエラーが発生した
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipes/{id}:
+    get:
+      summary: レシピ詳細を返すAPI
+      description: 指定したIDのレシピ詳細を取得する
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: レシピのID
+      responses:
+        "200":
+          description: レシピ詳細の取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeDetail"
+        "400":
+          description: 不正なリクエストパラメータ（ID形式が不正など）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: 指定されたレシピが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: サーバー内部でエラーが発生した
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    RecipeSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: レシピのID
+        type:
+          type: string
+          example: videos
+        attributes:
+          type: object
+          properties:
+            title:
+              type: string
+              description: レシピタイトル
+            thumbnail_url:
+              type: string
+              format: uri
+              description: サムネイル画像URL
+            cooking_time:
+              type: integer
+              description: 調理時間（分）
+            estimated_cost:
+              type: integer
+              description: 推定コスト（円）
+            review_score:
+              type: number
+              format: float
+              description: レビュー平均スコア
+            category:
+              type: array
+              items:
+                type: string
+              description: レシピのカテゴリ
+
+    RecipeDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          example: videos
+        attributes:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            cooking_time:
+              type: integer
+            estimated_cost:
+              type: integer
+            ingredients:
+              type: string
+              description: 材料（整形済みのテキスト）
+            instructions:
+              type: array
+              items:
+                type: string
+              description: 手順リスト
+            tips:
+              type: array
+              items:
+                type: string
+              description: 調理のコツ
+            review_score:
+              type: number
+              format: float
+            video_url:
+              type: string
+              format: uri
+            thumbnail_url:
+              type: string
+              format: uri
+            category:
+              type: array
+              items:
+                type: string
+            comment:
+              type: array
+              items:
+                type: string
+            taberepos:
+              type: array
+              items:
+                type: string
+              description: 食べレポ（レビューコメント）
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: エラーコード（例: INVALID_PARAMETER, NOT_FOUND, INTERNAL_ERROR）
+        message:
+          type: string
+          description: エラーメッセージ
