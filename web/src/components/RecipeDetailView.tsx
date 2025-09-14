@@ -5,6 +5,7 @@ import Link from "next/link";
 // import { useState } from "react";
 import type { RecipeDetail } from "@/types/recipe";
 // import Dialog from "./ui/Dialog";
+import { VideoController } from "./VideoController";
 
 export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 	const { attributes } = recipe;
@@ -23,21 +24,13 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 				</h1>
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 					<div className="md:col-span-2">
-						<div className="relative w-full aspect-video bg-black">
+						<div className="relative w-full bg-black" >
 							{attributes.video_url ? (
-								<video
-									controls
-									className="w-full h-full"
-									src={attributes.video_url}
-								>
-									<track
-										kind="captions"
-										src="/captions/placeholder.vtt"
-										srcLang="ja"
-										label="Japanese captions"
-										default
-									/>
-								</video>
+								<VideoController
+								recipeId={recipe.id}
+								videoSrc={attributes.video_url}
+								className="w-full h-full aspect-video"
+								/>
 							) : attributes.thumbnail_url ? (
 								<Image
 									src={attributes.thumbnail_url}
