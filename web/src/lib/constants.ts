@@ -14,4 +14,7 @@ export const LOCAL_API = {
 		list: "/api/recipes",
 		detail: (id: string) => `/api/recipes/${id}`,
 	},
+	videos: {
+		control: "/api/video-controller",
+	},
 } as const;

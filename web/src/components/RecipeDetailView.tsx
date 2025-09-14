@@ -3,22 +3,39 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import type { CuttingMethodKey } from "@/types/express";
+import type { ServerMessage } from "@/types/express";
 import type { RecipeDetail } from "@/types/recipe";
-import InstructionDialog, {
-	cuttingMethodOptions,
-	getInstructionVideoUrl,
-} from "./InstructionDialog";
-import TimerDialog from "./TimerDialog";
+import ActionRenderer from "./ActionRenderer";
 import { VideoController } from "./VideoController";
+
+const examplesServerMessage: ServerMessage[] = [
+	{
+		kind: "timer",
+		payload: { method: "START", seconds: 300 },
+	},
+	{
+		kind: "methodToVideo",
+		payload: { method: "START", videoType: "chop" },
+	},
+	{
+		kind: "videoControll",
+		payload: { instruction: "PAUSE", time: 60 },
+	},
+	{
+		kind: "withTalkUser",
+		payload: { talkMessage: "こんにちは" },
+	},
+	{
+		kind: "error",
+		payload: { message: "エラーが発生しました" },
+	},
+];
 
 export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 	const { attributes } = recipe;
-	const [selectedMethod, setSelectedMethod] = useState<CuttingMethodKey | "">(
-		"",
+	const [selectedMessage, setSelectedMessage] = useState<ServerMessage | null>(
+		null,
 	);
-	const [isInstructionOpen, setIsInstructionOpen] = useState(false);
-	const [isTimerOpen, setIsTimerOpen] = useState(false);
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -58,48 +75,21 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 								{attributes.description}
 							</p>
 						)}
-						{/* 切り方動画: 選択と起動 */}
-						<div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center">
-							<label className="text-sm text-gray-700">
-								切り方を選択
-								<select
-									className="ml-2 border rounded px-2 py-1 text-sm"
-									value={selectedMethod}
-									onChange={(e) =>
-										setSelectedMethod(
-											(e.target.value || "") as CuttingMethodKey | "",
-										)
-									}
+						<div className="mt-6 space-x-2">
+							{examplesServerMessage.map((msg) => (
+								<button
+									key={`${msg.kind}-${JSON.stringify(msg.payload)}`}
+									type="button"
+									onClick={() => setSelectedMessage(msg)}
+									className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
 								>
-									<option value="">選択してください</option>
-									{cuttingMethodOptions.map((o) => (
-										<option key={o.value} value={o.value}>
-											{o.label}
-										</option>
-									))}
-								</select>
-							</label>
-							<button
-								type="button"
-								disabled={
-									!selectedMethod || !getInstructionVideoUrl(selectedMethod)
-								}
-								onClick={() => setIsInstructionOpen(true)}
-								className="inline-flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
-							>
-								切り方を確認
-							</button>
+									{msg.kind} を実行
+								</button>
+							))}
 						</div>
-						{/* タイマー起動 */}
-						<div className="mt-4">
-							<button
-								type="button"
-								onClick={() => setIsTimerOpen(true)}
-								className="inline-flex items-center justify-center rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-							>
-								タイマーを開始（5分）
-							</button>
-						</div>
+						{selectedMessage && (
+							<ActionRenderer message={selectedMessage} recipeId={recipe.id} />
+						)}
 					</div>
 					<aside className="md:col-span-1 space-y-4">
 						<div className="bg-white p-4 rounded-md shadow">
@@ -159,19 +149,6 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 						)}
 					</aside>
 				</div>
-
-				{/* 切り方動画ダイアログ */}
-				<InstructionDialog
-					open={isInstructionOpen}
-					onClose={() => setIsInstructionOpen(false)}
-					method={selectedMethod || null}
-				/>
-				{/* タイマーダイアログ */}
-				<TimerDialog
-					open={isTimerOpen}
-					onClose={() => setIsTimerOpen(false)}
-					seconds={3} // 例: 5分
-				/>
 			</div>
 		</div>
 	);
