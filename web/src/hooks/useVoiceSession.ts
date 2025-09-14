@@ -2,10 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
-import { useRecorder } from "@/hooks/useRecorder";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import { useRecorder } from "@/hooks/useRecorder";
 
-export type VoiceStatus = "disconnected" | "connecting" | "connected" | "speaking" | "listening";
+export type VoiceStatus =
+	| "disconnected"
+	| "connecting"
+	| "connected"
+	| "speaking"
+	| "listening";
 
 /**
  * Voice Interface のロジックを集約したフック
@@ -33,7 +38,10 @@ export function useVoiceSession(opts?: {
 	const connect = () => {
 		if (socketRef.current?.connected) return;
 		setS("connecting");
-		const url = typeof window !== "undefined" ? "http://localhost:3002" : "http://voice-agent-server:3002";
+		const url =
+			typeof window !== "undefined"
+				? "http://localhost:3002"
+				: "http://voice-agent-server:3002";
 		socketRef.current = io(url);
 
 		socketRef.current.on("connect", () => setS("connected"));
@@ -72,10 +80,17 @@ export function useVoiceSession(opts?: {
 
 	const sendAudioBase64 = (b64: string) => {
 		if (!socketRef.current?.connected) return;
-		socketRef.current.emit("audio_data", { type: "input_audio_buffer.append", audio: b64 });
+		socketRef.current.emit("audio_data", {
+			type: "input_audio_buffer.append",
+			audio: b64,
+		});
 	};
 
-	const { start: startRec, stop: stopRec, isRecording } = useRecorder(sendAudioBase64);
+	const {
+		start: startRec,
+		stop: stopRec,
+		isRecording,
+	} = useRecorder(sendAudioBase64);
 
 	useEffect(() => {
 		return () => {

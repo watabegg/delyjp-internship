@@ -25,7 +25,10 @@ export function useRecorder(onPcmChunk?: (base64Pcm16: string) => void) {
 		let binary = "";
 		const chunk = 0x8000;
 		for (let i = 0; i < view.length; i += chunk) {
-			binary += String.fromCharCode.apply(null, Array.from(view.subarray(i, i + chunk)));
+			binary += String.fromCharCode.apply(
+				null,
+				Array.from(view.subarray(i, i + chunk)),
+			);
 		}
 		return btoa(binary);
 	};

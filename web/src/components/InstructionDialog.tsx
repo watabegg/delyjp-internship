@@ -1,11 +1,8 @@
 "use client";
 
 import { useId } from "react";
+import { type CuttingMethodKey, methodToVideoUrl } from "../types/express";
 import Dialog from "./ui/Dialog";
-import {
-	methodToVideoUrl,
-	type CuttingMethodKey,
-} from "../types/express";
 
 export const cuttingMethodOptions: {
 	value: CuttingMethodKey;
