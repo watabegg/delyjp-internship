@@ -4,12 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import type { RecipeDetail } from "@/types/recipe";
-
-// import Dialog from "./ui/Dialog";
 import { VideoController } from "./VideoController";
-
+import { CuttingMethodKey } from "@/types/express";
 import InstructionDialog, {
-	type CuttingMethodKey,
 	cuttingMethodOptions,
 	getInstructionVideoUrl,
 } from "./InstructionDialog";
