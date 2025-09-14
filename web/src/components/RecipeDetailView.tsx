@@ -80,7 +80,7 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 						{attributes.instructions && attributes.instructions.length > 0 && (
 							<div className="bg-white p-4 rounded-md shadow">
 								<h2 className="font-semibold mb-2">作り方</h2>
-								<ol className="list-decimal list-inside space-y-1 text-sm">
+								<ol className="list-none list-inside space-y-1 text-sm">
 									{attributes.instructions.map((step) => (
 										<li key={step}>{step}</li>
 									))}
