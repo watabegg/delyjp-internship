@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import Dialog from "./ui/Dialog";
 
 // 切り方と動画URLのマッピング
@@ -55,16 +56,26 @@ const InstructionDialog = ({
   method,
 }: InstructionDialogProps) => {
   const url = method ? methodToVideoUrl[method] : undefined;
+  const dialogId = useId();
+
   return (
     <Dialog
-      id="instruction-dialog"
+      id={dialogId}
       title="切り方動画"
       open={open}
       onClose={onClose}
       className="w-full max-w-3xl"
     >
       {url ? (
-        <video controls className="w-full h-full max-h-[80vh]" src={url} />
+        <video controls className="w-full h-full max-h-[80vh]" src={url}>
+          <track
+            kind="captions"
+            src="/captions/placeholder.vtt"
+            srcLang="ja"
+            label="Japanese captions"
+            default
+          />
+        </video>
       ) : (
         <p className="p-4">動画が見つかりません。</p>
       )}
