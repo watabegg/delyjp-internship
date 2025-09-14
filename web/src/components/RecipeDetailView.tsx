@@ -27,9 +27,9 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 						<div className="relative w-full bg-black aspect-video">
 							{attributes.video_url ? (
 								<VideoController
-								recipeId={recipe.id}
-								videoSrc={attributes.video_url}
-								className="w-full h-full aspect-video"
+									recipeId={recipe.id}
+									videoSrc={attributes.video_url}
+									className="w-full h-full aspect-video"
 								/>
 							) : attributes.thumbnail_url ? (
 								<Image
