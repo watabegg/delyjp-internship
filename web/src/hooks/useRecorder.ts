@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * PCM16(24kHz, mono) を生成して小さなチャンクで渡すレコーダーフック。
@@ -57,17 +57,19 @@ export function useRecorder(onPcmChunk?: (base64Pcm16: string) => void) {
 		setIsRecording(true);
 	};
 
-	const stop = () => {
+	const stop = useCallback(() => {
 		setIsRecording(false);
 		if (processorRef.current) {
 			processorRef.current.disconnect();
 			processorRef.current = null;
 		}
 		if (mediaStreamRef.current) {
-			mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+			for (const t of mediaStreamRef.current.getTracks()) {
+				t.stop();
+			}
 			mediaStreamRef.current = null;
 		}
-	};
+	}, []);
 
 	useEffect(() => {
 		return () => {
@@ -77,7 +79,7 @@ export function useRecorder(onPcmChunk?: (base64Pcm16: string) => void) {
 				audioContextRef.current = null;
 			}
 		};
-	}, []);
+	}, [stop]);
 
 	return { start, stop, isRecording };
 }

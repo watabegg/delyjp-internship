@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useRecorder } from "@/hooks/useRecorder";

@@ -1,6 +1,4 @@
 "use client";
-
-import { useState } from "react";
 import { useVoiceSession } from "@/hooks/useVoiceSession";
 
 interface VoiceInterfaceProps {
@@ -64,6 +62,7 @@ export default function VoiceInterface({
 
 			{status === "disconnected" && (
 				<button
+					type="button"
 					onClick={connect}
 					className="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 mb-4"
 				>
@@ -73,6 +72,7 @@ export default function VoiceInterface({
 
 			{status !== "disconnected" && status !== "connecting" && (
 				<button
+					type="button"
 					onClick={isRecording ? stopRecording : startRecording}
 					disabled={status === "speaking"}
 					className={`w-full py-3 px-6 rounded-full text-white font-medium ${

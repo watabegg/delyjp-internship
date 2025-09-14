@@ -26,7 +26,9 @@ export function useAudioPlayer() {
 		src.buffer = buffer;
 		src.connect(ctx.destination);
 		src.start();
-		await new Promise<void>((resolve) => (src.onended = () => resolve()));
+		await new Promise<void>((resolve) => {
+			src.onended = () => resolve();
+		});
 	};
 
 	const pump = async () => {
@@ -34,8 +36,10 @@ export function useAudioPlayer() {
 		busyRef.current = true;
 		try {
 			while (queueRef.current.length) {
-				const chunk = queueRef.current.shift()!;
-				await playBase64(chunk);
+				const chunk = queueRef.current.shift();
+				if (chunk !== undefined) {
+					await playBase64(chunk);
+				}
 			}
 		} finally {
 			busyRef.current = false;
