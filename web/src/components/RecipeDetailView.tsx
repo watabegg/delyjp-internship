@@ -1,9 +1,15 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+// import { useState } from "react";
 import type { RecipeDetail } from "@/types/recipe";
+// import Dialog from "./ui/Dialog";
 
 export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 	const { attributes } = recipe;
+	// const [isDialogOpen, setIsDialogOpen] = useState(false);
+
 	return (
 		<div className="min-h-screen bg-gray-50">
 			<div className="container mx-auto px-4 py-6">
@@ -80,7 +86,7 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 						{attributes.instructions && attributes.instructions.length > 0 && (
 							<div className="bg-white p-4 rounded-md shadow">
 								<h2 className="font-semibold mb-2">作り方</h2>
-								<ol className="list-decimal list-inside space-y-1 text-sm">
+								<ol className="list-none list-inside space-y-1 text-sm">
 									{attributes.instructions.map((step) => (
 										<li key={step}>{step}</li>
 									))}
@@ -109,6 +115,38 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 						)}
 					</aside>
 				</div>
+				{/* {attributes.video_url && (
+					<button
+						onClick={() => setIsDialogOpen(true)}
+						className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+					>
+						動画を大きく見る
+					</button>
+				)}
+				<Dialog
+					id="video-dialog"
+					title="動画ビューア"
+					open={isDialogOpen}
+					onClose={() => setIsDialogOpen(false)}
+				>
+					{attributes.video_url ? (
+						<video
+							controls
+							className="w-full h-full max-h-[80vh]"
+							src={attributes.video_url}
+						>
+							<track
+								kind="captions"
+								src="/captions/placeholder.vtt"
+								srcLang="ja"
+								label="Japanese captions"
+								default
+							/>
+						</video>
+					) : (
+						<p className="p-4">動画が利用できません。</p>
+					)}
+				</Dialog> */}
 			</div>
 		</div>
 	);
