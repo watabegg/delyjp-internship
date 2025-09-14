@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 interface VideoControllerProps {
   recipeId: string;
@@ -14,10 +14,10 @@ export function VideoController({ recipeId, videoSrc, className }: VideoControll
   const [_userInteracted, setUserInteracted] = useState(false);
 
   // 自動再生警告を表示する関数
-  const showAutoplayWarning = () => {
+  const showAutoplayWarning = useCallback(() => {
     setShowWarning(true);
     setTimeout(() => setShowWarning(false), 5000); // 5秒後に非表示
-  };
+  }, []);
 
   // ユーザーのインタラクションを検知
   useEffect(() => {
@@ -190,7 +190,9 @@ export function VideoController({ recipeId, videoSrc, className }: VideoControll
         onLoadStart={() => console.log("[VIDEO] 読み込み開始")}
         onCanPlay={() => console.log("[VIDEO] 再生可能")}
         onError={(e) => console.error("[VIDEO] エラー:", e)}
-      />
+      >
+        <track kind="captions" />
+      </video>
       
       {/* 自動再生警告バナー */}
       {showWarning && (
