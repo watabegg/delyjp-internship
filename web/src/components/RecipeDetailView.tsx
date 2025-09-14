@@ -7,6 +7,7 @@ import type { ServerMessage } from "@/types/express";
 import type { RecipeDetail } from "@/types/recipe";
 import ActionRenderer from "./ActionRenderer";
 import { VideoController } from "./VideoController";
+import AudioSynthesize from "./AudioSynthesize";
 
 const examplesServerMessage: ServerMessage[] = [
 	{
@@ -150,6 +151,8 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 					</aside>
 				</div>
 			</div>
+            {/* TTS自動再生コンポーネント */}
+            <AudioSynthesize />
 		</div>
 	);
 }
