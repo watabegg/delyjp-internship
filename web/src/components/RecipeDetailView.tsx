@@ -2,13 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-// import { useState } from "react";
+import { useState } from "react";
 import type { RecipeDetail } from "@/types/recipe";
-// import Dialog from "./ui/Dialog";
+import InstructionDialog, {
+	type CuttingMethodKey,
+	cuttingMethodOptions,
+	getInstructionVideoUrl,
+} from "./InstructionDialog";
 
 export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 	const { attributes } = recipe;
-	// const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [selectedMethod, setSelectedMethod] = useState<CuttingMethodKey | "">(
+		"",
+	);
+	const [isInstructionOpen, setIsInstructionOpen] = useState(false);
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -56,6 +63,38 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 								{attributes.description}
 							</p>
 						)}
+						{/* 切り方動画: 選択と起動 */}
+						<div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center">
+							<label className="text-sm text-gray-700">
+								切り方を選択
+								<select
+									className="ml-2 border rounded px-2 py-1 text-sm"
+									value={selectedMethod}
+									onChange={(e) =>
+										setSelectedMethod(
+											(e.target.value || "") as CuttingMethodKey | "",
+										)
+									}
+								>
+									<option value="">選択してください</option>
+									{cuttingMethodOptions.map((o) => (
+										<option key={o.value} value={o.value}>
+											{o.label}
+										</option>
+									))}
+								</select>
+							</label>
+							<button
+								type="button"
+								disabled={
+									!selectedMethod || !getInstructionVideoUrl(selectedMethod)
+								}
+								onClick={() => setIsInstructionOpen(true)}
+								className="inline-flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
+							>
+								切り方を確認
+							</button>
+						</div>
 					</div>
 					<aside className="md:col-span-1 space-y-4">
 						<div className="bg-white p-4 rounded-md shadow">
@@ -115,38 +154,12 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 						)}
 					</aside>
 				</div>
-				{/* {attributes.video_url && (
-					<button
-						onClick={() => setIsDialogOpen(true)}
-						className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-					>
-						動画を大きく見る
-					</button>
-				)}
-				<Dialog
-					id="video-dialog"
-					title="動画ビューア"
-					open={isDialogOpen}
-					onClose={() => setIsDialogOpen(false)}
-				>
-					{attributes.video_url ? (
-						<video
-							controls
-							className="w-full h-full max-h-[80vh]"
-							src={attributes.video_url}
-						>
-							<track
-								kind="captions"
-								src="/captions/placeholder.vtt"
-								srcLang="ja"
-								label="Japanese captions"
-								default
-							/>
-						</video>
-					) : (
-						<p className="p-4">動画が利用できません。</p>
-					)}
-				</Dialog> */}
+				{/* 切り方動画ダイアログ */}
+				<InstructionDialog
+					open={isInstructionOpen}
+					onClose={() => setIsInstructionOpen(false)}
+					method={selectedMethod || null}
+				/>
 			</div>
 		</div>
 	);
