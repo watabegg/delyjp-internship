@@ -5,9 +5,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
 	_req: Request,
-	{ params }: { params: { id: string } },
+	{ params }: { params: Promise<{ id: string }> },
 ) {
-	const upstream = `${API_BASE}${API_ROUTES.recipes.detail(params.id)}`;
+	const { id } = await params;
+	const upstream = `${API_BASE}${API_ROUTES.recipes.detail(id)}`;
 
 	const res = await fetch(upstream, {
 		headers: { Accept: "application/json" },

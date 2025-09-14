@@ -10,8 +10,9 @@ async function getRecipe(id: string): Promise<RecipeDetail> {
 export default async function RecipeDetailPage({
 	params,
 }: {
-	params: { id: string };
+	params: Promise<{ id: string }>;
 }) {
-	const recipe = await getRecipe(params.id);
+	const { id } = await params;
+	const recipe = await getRecipe(id);
 	return <RecipeDetailView recipe={recipe} />;
 }
