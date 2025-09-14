@@ -3,18 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import type { CuttingMethodKey } from "@/types/express";
 import type { RecipeDetail } from "@/types/recipe";
-
-// import Dialog from "./ui/Dialog";
-import { VideoController } from "./VideoController";
-
 import InstructionDialog, {
-	type CuttingMethodKey,
 	cuttingMethodOptions,
 	getInstructionVideoUrl,
 } from "./InstructionDialog";
 import TimerDialog from "./TimerDialog";
-
+import { VideoController } from "./VideoController";
 
 export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 	const { attributes } = recipe;
@@ -176,7 +172,6 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 					onClose={() => setIsTimerOpen(false)}
 					seconds={3} // 例: 5分
 				/>
-
 			</div>
 		</div>
 	);
