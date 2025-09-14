@@ -8,7 +8,7 @@ services:
     ports:
       - "3306:3306"
 
-  app:
+  rails-app:
     build:
       context: .
       dockerfile: ./Dockerfile.dev
@@ -21,6 +21,37 @@ services:
     depends_on:
       - db
     command: bash -c "rm -f tmp/pids/server.pid && rails server -b 0.0.0.0 -p 3001"
+
+  # Next.js フロントエンド
+  nextjs-frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+
+  # Express.js 音声エージェントサーバー
+  voice-agent-server:
+    build:
+      context: ./voice-agent-server
+      dockerfile: Dockerfile
+    volumes:
+      - ./voice-agent-server:/app
+      - /app/node_modules
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+    env_file:
+      - ./voice-agent-server/.env
+    command: npm run dev
 
 volumes:
   db-data:
