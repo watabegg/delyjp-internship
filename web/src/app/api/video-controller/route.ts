@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendVideoControlEvent } from "../video-events/route";
+import { sendVideoControlEvent } from "@/lib/video-events";
 
 interface VideoControlRequest {
   instruction: "PLAY" | "PAUSE" | "REWIND" | "FORWARD";
@@ -72,11 +72,13 @@ export async function POST(request: NextRequest) {
     console.log(`[VIDEO_CONTROL] ${new Date().toISOString()} - Recipe: ${recipeId}, Action: ${instruction}${time ? `, Time: ${time}秒` : ""}`);
 
     // Server-Sent Events でクライアントにビデオ制御イベントを送信
+    console.log(`[VIDEO_CONTROL] SSEイベント送信開始: ${recipeId}`);
     const eventSent = sendVideoControlEvent(recipeId, {
       instruction,
       time: actualTime,
       message,
     });
+    console.log(`[VIDEO_CONTROL] SSEイベント送信結果: ${eventSent}`);
 
     // 成功レスポンス
     return NextResponse.json({

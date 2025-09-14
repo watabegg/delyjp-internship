@@ -24,7 +24,7 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 				</h1>
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 					<div className="md:col-span-2">
-						<div className="relative w-full bg-black" >
+						<div className="relative w-full bg-black aspect-video">
 							{attributes.video_url ? (
 								<VideoController
 								recipeId={recipe.id}
@@ -108,38 +108,6 @@ export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
 						)}
 					</aside>
 				</div>
-				{/* {attributes.video_url && (
-					<button
-						onClick={() => setIsDialogOpen(true)}
-						className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-					>
-						動画を大きく見る
-					</button>
-				)}
-				<Dialog
-					id="video-dialog"
-					title="動画ビューア"
-					open={isDialogOpen}
-					onClose={() => setIsDialogOpen(false)}
-				>
-					{attributes.video_url ? (
-						<video
-							controls
-							className="w-full h-full max-h-[80vh]"
-							src={attributes.video_url}
-						>
-							<track
-								kind="captions"
-								src="/captions/placeholder.vtt"
-								srcLang="ja"
-								label="Japanese captions"
-								default
-							/>
-						</video>
-					) : (
-						<p className="p-4">動画が利用できません。</p>
-					)}
-				</Dialog> */}
 			</div>
 		</div>
 	);

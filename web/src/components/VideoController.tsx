@@ -11,7 +11,7 @@ interface VideoControllerProps {
 export function VideoController({ recipeId, videoSrc, className }: VideoControllerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showWarning, setShowWarning] = useState(false);
-  const [userInteracted, setUserInteracted] = useState(false);
+  const [_userInteracted, setUserInteracted] = useState(false);
 
   // 自動再生警告を表示する関数
   const showAutoplayWarning = () => {
@@ -39,17 +39,43 @@ export function VideoController({ recipeId, videoSrc, className }: VideoControll
   }, []);
 
   useEffect(() => {
+    // video要素の初期状態をログ出力
+    console.log("[VIDEO] VideoController マウント, recipeId:", recipeId);
+    console.log("[VIDEO] videoSrc:", videoSrc);
+    
     // Server-Sent Events で制御イベントを受信
+    console.log(`[SSE] 接続開始: /api/video-events?recipeId=${recipeId}`);
     const eventSource = new EventSource(`/api/video-events?recipeId=${recipeId}`);
+
+    eventSource.onopen = () => {
+      console.log("[SSE] 接続成功");
+    };
 
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         console.log("[SSE] 受信イベント:", data);
 
+        if (data.type === "connected") {
+          console.log("[SSE] 接続確認完了:", data);
+          return;
+        }
+
         if (data.type === "video-control" && data.recipeId === recipeId) {
           const video = videoRef.current;
-          if (!video) return;
+          if (!video) {
+            console.warn("[VIDEO] ビデオ要素が見つかりません");
+            return;
+          }
+
+          console.log(`[VIDEO] 制御実行開始: ${data.instruction}`);
+          console.log("[VIDEO] video要素の状態:", {
+            paused: video.paused,
+            currentTime: video.currentTime,
+            duration: video.duration,
+            readyState: video.readyState,
+            src: video.src
+          });
 
           // ビデオ制御を実行
           switch (data.instruction) {
@@ -65,17 +91,27 @@ export function VideoController({ recipeId, videoSrc, className }: VideoControll
               });
               break;
             case "PAUSE":
+              console.log("[VIDEO] 一時停止実行前:", { paused: video.paused });
               video.pause();
+              console.log("[VIDEO] 一時停止実行後:", { paused: video.paused });
               break;
             case "REWIND":
-              video.currentTime = Math.max(0, video.currentTime - (data.時間 || 10));
+              const rewindTime = Math.max(0, video.currentTime - (data.time || 10));
+              console.log("[VIDEO] 巻き戻し実行前:", { currentTime: video.currentTime });
+              video.currentTime = rewindTime;
+              console.log("[VIDEO] 巻き戻し実行後:", { currentTime: video.currentTime, targetTime: rewindTime });
               break;
             case "FORWARD":
-              video.currentTime = Math.min(video.duration || 0, video.currentTime + (data.時間 || 10));
+              const forwardTime = Math.min(video.duration || 0, video.currentTime + (data.time || 10));
+              console.log("[VIDEO] 早送り実行前:", { currentTime: video.currentTime });
+              video.currentTime = forwardTime;
+              console.log("[VIDEO] 早送り実行後:", { currentTime: video.currentTime, targetTime: forwardTime });
               break;
+            default:
+              console.warn(`[VIDEO] 不明な命令: ${data.instruction}`);
           }
 
-          console.log(`[VIDEO] ${data.instruction} 実行: ${data.message}`);
+          console.log(`[VIDEO] ${data.instruction} 実行完了: ${data.message}`);
         }
       } catch (error) {
         console.error("[SSE] データ解析エラー:", error);
@@ -84,13 +120,63 @@ export function VideoController({ recipeId, videoSrc, className }: VideoControll
 
     eventSource.onerror = (error) => {
       console.error("[SSE] 接続エラー:", error);
+      console.log("[SSE] EventSource状態:", eventSource.readyState);
+      console.log("[SSE] EventSource状態の意味:", {
+        0: "CONNECTING",
+        1: "OPEN", 
+        2: "CLOSED"
+      }[eventSource.readyState]);
+      console.log("[SSE] URL:", eventSource.url);
+      
+      // 接続が閉じられた場合の再接続を試行
+      if (eventSource.readyState === EventSource.CLOSED) {
+        console.log("[SSE] 接続が閉じられました。5秒後に再接続を試行します...");
+        setTimeout(() => {
+          console.log("[SSE] 再接続を試行中...");
+          // useEffectを再実行させるための状態変更は行わず、ログのみ
+        }, 5000);
+      }
     };
 
     // クリーンアップ
     return () => {
+      console.log("[SSE] 接続クローズ");
       eventSource.close();
     };
-  }, [recipeId]);
+  }, [recipeId, showAutoplayWarning]);
+
+  // video要素の状態を監視
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      const logVideoState = () => {
+        console.log("[VIDEO] 状態変更:", {
+          paused: video.paused,
+          currentTime: video.currentTime,
+          duration: video.duration,
+          readyState: video.readyState
+        });
+      };
+
+      video.addEventListener('loadedmetadata', () => {
+        console.log("[VIDEO] メタデータ読み込み完了:", {
+          duration: video.duration,
+          videoWidth: video.videoWidth,
+          videoHeight: video.videoHeight
+        });
+      });
+
+      video.addEventListener('timeupdate', logVideoState);
+      video.addEventListener('play', () => console.log("[VIDEO] 再生開始"));
+      video.addEventListener('pause', () => console.log("[VIDEO] 一時停止"));
+
+      return () => {
+        video.removeEventListener('timeupdate', logVideoState);
+        video.removeEventListener('play', () => console.log("[VIDEO] 再生開始"));
+        video.removeEventListener('pause', () => console.log("[VIDEO] 一時停止"));
+      };
+    }
+  }, []);
 
   return (
     <div className="relative">
@@ -101,6 +187,9 @@ export function VideoController({ recipeId, videoSrc, className }: VideoControll
         src={videoSrc}
         data-recipe-id={recipeId}
         onClick={() => setUserInteracted(true)}
+        onLoadStart={() => console.log("[VIDEO] 読み込み開始")}
+        onCanPlay={() => console.log("[VIDEO] 再生可能")}
+        onError={(e) => console.error("[VIDEO] エラー:", e)}
       />
       
       {/* 自動再生警告バナー */}
