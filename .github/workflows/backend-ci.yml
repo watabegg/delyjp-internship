@@ -1,9 +1,9 @@
-name: CI
+name: BackendCI
 
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   scan_ruby:
@@ -36,4 +36,3 @@ jobs:
 
       - name: Lint code for consistent style
         run: bin/rubocop -f github
-
