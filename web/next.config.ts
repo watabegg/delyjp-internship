@@ -9,6 +9,16 @@ const nextConfig: NextConfig = {
 				port: "3001",
 				pathname: "/rails/active_storage/**",
 			},
+			{
+				protocol: "https",
+				hostname: "video.kurashiru.com",
+				pathname: "/**",
+			},
+			{
+				protocol: "http",
+				hostname: "video.kurashiru.com",
+				pathname: "/**",
+			},
 		],
 	},
 };
