@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_07_050653) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_14_070000) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -44,6 +44,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_07_050653) do
     t.string "title", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "description"
+    t.integer "cooking_time"
+    t.integer "estimated_cost"
+    t.text "ingredients"
+    t.json "instructions"
+    t.json "tips"
+    t.float "review_score"
+    t.string "video_url"
+    t.string "thumbnail_url"
+    t.json "category"
+    t.json "comment"
+    t.json "taberepos"
+    t.index ["uuid"], name: "index_recipes_on_uuid", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
