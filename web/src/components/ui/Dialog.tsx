@@ -12,7 +12,6 @@ type DialogProps = {
 	onClose: () => void;
 	className?: string;
 	isCloseButton?: boolean;
-	noPadding?: boolean; // kept for API compatibility; no default effect
 };
 
 /**
@@ -76,7 +75,6 @@ const Dialog = ({
 	className,
 	isCloseButton = true,
 }: DialogProps) => {
-	// Lock body scroll while open
 	useEffect(() => {
 		if (!open) return;
 		const { body } = document;
@@ -107,7 +105,6 @@ const Dialog = ({
 			aria-label={title}
 			className="fixed inset-0 z-50 flex items-center justify-center"
 		>
-			{/* Backdrop: use semantic button for a11y */}
 			<button
 				type="button"
 				className="absolute inset-0 bg-black/50 cursor-pointer"
