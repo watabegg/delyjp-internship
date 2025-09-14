@@ -6,7 +6,7 @@ class Api::RecipesController < ApplicationController
     start = int_param(:start, default: 0, min: 0, max: 10_000)
 
     if limit.nil? || start.nil?
-      return render json: error_response('INVALID_PARAMETER', 'limit または start が不正です'), status: :bad_request
+      return render json: error_response("INVALID_PARAMETER", "limit または start が不正です"), status: :bad_request
     end
 
     scope = Recipe.order(created_at: :desc)
@@ -21,8 +21,8 @@ class Api::RecipesController < ApplicationController
 
   # GET /recipes/:id
   def show
-    recipe = Recipe.find_by(uuid: params[:id])
-    return render json: error_response('NOT_FOUND', '指定されたレシピが存在しません'), status: :not_found if recipe.nil?
+  recipe = Recipe.find_by(uuid: params[:id])
+  return render json: error_response("NOT_FOUND", "指定されたレシピが存在しません"), status: :not_found if recipe.nil?
 
     render json: serialize_detail(recipe)
   end
@@ -32,7 +32,7 @@ class Api::RecipesController < ApplicationController
   def serialize_summary(recipe)
     {
       id: recipe.uuid,
-      type: 'videos',
+  type: "videos",
       attributes: {
         title: recipe.title,
         thumbnail_url: thumbnail_url_for(recipe),
@@ -47,7 +47,7 @@ class Api::RecipesController < ApplicationController
   def serialize_detail(recipe)
     {
       id: recipe.uuid,
-      type: 'videos',
+  type: "videos",
       attributes: {
         title: recipe.title,
         description: recipe.description,
