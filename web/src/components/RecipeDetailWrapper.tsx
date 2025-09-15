@@ -24,7 +24,7 @@ export function RecipeDetailWrapper({ recipe }: RecipeDetailWrapperProps) {
 			console.log("[RECIPE-WRAPPER] 最終転写結果:", result.transcript);
 			// APIに送信して応答を取得
 			try {
-				const res = await apiPost("/api/voice-command", {
+				const res = await apiPost(`/api/voice-command?recipe_id=${recipe.id}`, {
 					speechText: result.transcript,
 				});
 				console.log("[RECIPE-WRAPPER] API応答:", res);

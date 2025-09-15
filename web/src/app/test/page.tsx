@@ -79,8 +79,8 @@ export default function TestPage() {
 				},
 			);
 			const data = (await res.json()) as ServerMessage;
-			// APIはエラー時も kind: "error" を返す想定
 			setSelected(data);
+			console.log("API応答:", data);
 		} catch (e) {
 			console.error(e);
 			setError("API通信に失敗しました");
