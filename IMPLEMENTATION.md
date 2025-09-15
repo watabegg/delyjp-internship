@@ -1,6 +1,92 @@
-# AI クッキングアシスタント - 4 パターンの処理フロー（API 版）
+# AI クッキングアシスタント - LangChain エージェントによる 3 パターン処理（API 版）
 
-## 1. レシピ検索（recipe_search）- データ取得 → AI 回答生成パターン
+## LangChain エージェントによる 3 パターン処理
+
+### 全体フロー図
+
+```mermaid
+graph TD
+    A[ユーザーの入力] --> B{API: /api/voice-command}
+    B --> C[LangChainエージェント処理]
+    C --> D{エージェントは<br/>ツールを使用したか？}
+
+    D -->|No| E[パターン3: AIの知識で応答]
+    E --> F[type: generate_text_response を返す]
+
+    D -->|Yes| G{使用したツールは<br/>コマンド型か？}
+
+    G -->|Yes| H[パターン1: コマンド実行]
+    H --> I[ツールのJSONをそのまま返す]
+
+    G -->|No| J[パターン2: 情報を基に応答生成]
+    J --> F
+
+    I --> K[クライアントにレスポンス]
+    F --> K
+```
+
+### 3 パターンの対応方針
+
+LangChain エージェントが実行した結果を基に、以下の判定フローで 3 パターンを自動分類します：
+
+1. **パターン 1: コマンド型ツール実行**
+
+   - **判断基準**: `result.intermediateSteps.length > 0` かつ `isCommandTool(toolName) === true`
+   - **対象ツール**: `video_search`, `video_control`, `timer_control`
+   - **処理**: ツールが返した JSON（`toolCall.observation`）をそのまま API レスポンスとして返す
+   - **目的**: フロントエンドで即座に実行可能な操作指示を送信
+
+2. **パターン 2: 情報取得型ツール + AI 回答生成**
+
+   - **判断基準**: `result.intermediateSteps.length > 0` かつ `isCommandTool(toolName) === false`
+   - **対象ツール**: `recipe_search`
+   - **処理**: LangChain エージェントの最終出力（`result.output`）を`generate_text_response`形式で返す
+   - **目的**: ツールで取得した情報を基に AI が自然言語で詳細回答を生成
+
+3. **パターン 3: AI 知識ベース回答**
+   - **判断基準**: `result.intermediateSteps.length === 0`
+   - **対象**: ツールが不要な一般的な質問
+   - **処理**: LangChain エージェントの最終出力（`result.output`）を`generate_text_response`形式で返す
+   - **目的**: AI の知識のみで直接回答を生成
+
+### 実装での判定ロジック
+
+```typescript
+// 1. エージェント実行
+const result = await agentExecutor.invoke({ input: transcript });
+
+// 2. ツール使用チェック
+if (result.intermediateSteps && result.intermediateSteps.length > 0) {
+  const toolName = result.intermediateSteps[0].action.tool;
+  const toolOutput = result.intermediateSteps[0].observation;
+
+  // 3. コマンド型ツール判定
+  if (this.isCommandTool(toolName)) {
+    // パターン1: ツールJSONをそのまま返す
+    return { pattern: 1, response: JSON.parse(toolOutput) };
+  } else {
+    // パターン2: AIが生成した回答を返す
+    return {
+      pattern: 2,
+      response: {
+        type: "generate_text_response",
+        payload: { message: result.output },
+      },
+    };
+  }
+} else {
+  // パターン3: AIの知識ベース回答
+  return {
+    pattern: 3,
+    response: {
+      type: "generate_text_response",
+      payload: { message: result.output },
+    },
+  };
+}
+```
+
+## 1. レシピ検索（パターン 2: 情報提供型）
 
 ### フロー図（レシピ検索）
 
@@ -8,10 +94,11 @@
 ユーザー音声入力
 「カレーの作り方を教えて」
          ↓
-    OpenAI LLM
-    (意図解釈)
+   LangChainエージェント
+   (意図解釈 + ツール選択)
          ↓
-  recipe_searchツール選択・実行
+  recipe_searchツール実行
+  (情報取得型ツール)
          ↓
   ツール内でDB検索実行
   searchRecipeDatabase("カレー")
@@ -19,15 +106,12 @@
     検索結果を取得
     [レシピオブジェクト配列]
          ↓
-  検索結果をツールが返却
-  (OpenAI LLMが参照可能)
-         ↓
-    OpenAI LLM
+   LangChainエージェント
   (検索結果を基に自然な回答生成)
          ↓
     API レスポンス（JSON）
 {
-  "type": "recipe_search",
+  "type": "generate_text_response",
   "payload": {
     "message": "基本のビーフカレーの作り方をご紹介しますね！
 
@@ -58,47 +142,77 @@
 ### コード実装（レシピ検索）
 
 ```typescript
+// LangChain DynamicStructuredTool でレシピ検索ツールを定義
 const recipeSearchTool = new DynamicStructuredTool({
+  name: "recipe_search",
+  description:
+    "レシピを検索して詳細な情報を取得する。料理名や食材名で検索できます。",
+  schema: z.object({
+    query: z.string().describe("検索する料理名や食材名"),
+  }),
   func: async ({ query }) => {
-    // 実際のデータ取得
-    const searchResults = await searchRecipeDatabase(query);
+    console.log(`🍳 [Tool] レシピ検索実行: ${query}`);
 
-    // AIが回答生成時に参照できるようデータを返す
-    // この結果をOpenAI LLMが参照して自然な回答を生成する
-    return `検索結果: ${JSON.stringify(searchResults, null, 2)}`;
+    // 実際のDB検索やAPI呼び出し
+    const mockRecipes = [
+      {
+        id: 1,
+        title: `基本の${query}`,
+        ingredients: [
+          { name: "主材料A", amount: "300g" },
+          { name: "主材料B", amount: "2個" },
+          { name: "調味料C", amount: "大さじ2" },
+          { name: "調味料D", amount: "適量" },
+        ],
+        steps: [
+          "材料の準備と下ごしらえを行う",
+          "主材料Aを中火で炒める（5分程度）",
+          "主材料Bを加えてさらに炒める",
+          "調味料Cと調味料Dで味付けをする",
+          "蓋をして弱火で15分煮込んで完成",
+        ],
+        tips: "材料Aはしっかり炒めることで旨味が増します。",
+        cookingTime: "約30分",
+        difficulty: "初級",
+      },
+    ];
+
+    // LangChainエージェントがこの結果を参照して自然な回答を生成
+    return `レシピ検索結果:
+クエリ: ${query}
+見つかったレシピ: ${mockRecipes.length}件
+
+${mockRecipes
+  .map(
+    (recipe, index) => `
+レシピ${index + 1}: ${recipe.title}
+調理時間: ${recipe.cookingTime}
+難易度: ${recipe.difficulty}
+
+材料:
+${recipe.ingredients.map((ing) => `- ${ing.name}: ${ing.amount}`).join("\n")}
+
+手順:
+${recipe.steps.map((step, i) => `${i + 1}. ${step}`).join("\n")}
+
+コツ: ${recipe.tips}
+`
+  )
+  .join("\n")}`;
   },
 });
 
-// AIクッキングアシスタントのプロンプト修正
-const prompt = ChatPromptTemplate.fromMessages([
-  [
-    "system",
-    `レシピ検索の場合は、検索結果を基に親切で詳細な回答を生成してください。
-    材料、手順、コツを分かりやすく整理して説明してください。`,
-  ],
-  // ...
-]);
+// Next.js API Route での統一処理
+export async function POST(req: NextRequest) {
+  const { speechText } = await req.json();
 
-// APIエンドポイント（レシピ検索の特別処理）
-app.post("/api/voice-command", async (req, res) => {
-  const result = await assistant.processUserInput(req.body.speechText);
+  // LangChainエージェントで3パターンを自動判定・処理
+  const agentResult = await AIService.processWithLangChainAgent(speechText);
 
-  if (result.toolCalls?.length > 0) {
-    const toolResult = JSON.parse(result.toolCalls[0]);
-
-    // レシピ検索の場合は生成された回答を返す
-    if (toolResult.type === "recipe_search") {
-      res.json({
-        type: "recipe_search",
-        payload: {
-          message: result.response, // AIが生成した詳細な回答
-        },
-      });
-    } else {
-      res.json(toolResult); // 他のツールはそのまま返却
-    }
-  }
-});
+  // agentResult.response をそのまま返却
+  // パターン2の場合、result.output（AIが生成した詳細回答）が含まれる
+  return NextResponse.json(agentResult.response);
+}
 ```
 
 ---
@@ -133,15 +247,36 @@ app.post("/api/voice-command", async (req, res) => {
 ### コード実装（動画検索）
 
 ```typescript
+// コマンド型ツール（パターン1）- JSONをそのまま返す
 const videoSearchTool = new DynamicStructuredTool({
+  name: "video_search",
+  description: "料理動画を検索する。料理名や調理法で動画を見つけることができます。",
+  schema: z.object({
+    query: z.string().describe("検索する動画のキーワード（料理名など）"),
+  }),
   func: async ({ query }) => {
-    // データ取得は不要、操作指示のみ
+    console.log(`🎬 [Tool] 動画検索実行: ${query}`);
+
+    // フロントエンド向けのコマンドJSONを返す
     return JSON.stringify({
       type: "video_search",
       payload: { query },
     });
   },
 });
+
+// AIServiceでの判定
+private static isCommandTool(toolName: string): boolean {
+  return ["video_search", "video_control", "timer_control"].includes(toolName);
+}
+
+// パターン1の処理: ツールJSONをそのまま返す
+if (this.isCommandTool(toolName)) {
+  return {
+    pattern: 1,
+    response: JSON.parse(toolOutput), // {"type": "video_search", "payload": {"query": "ハンバーグ"}}
+  };
+}
 ```
 
 ---

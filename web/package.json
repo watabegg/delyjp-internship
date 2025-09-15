@@ -10,11 +10,18 @@
 		"check": "biome check --write"
 	},
 	"dependencies": {
+		"@google/generative-ai": "^0.24.1",
+		"@langchain/core": "^0.3.75",
+		"@langchain/google-genai": "^0.2.17",
+		"@langchain/openai": "^0.3.13",
 		"clsx": "^2.1.1",
+		"langchain": "^0.3.33",
 		"next": "15.4.7",
+		"openai": "^4.58.1",
 		"react": "19.1.0",
 		"react-dom": "19.1.0",
-		"socket.io-client": "^4.8.1"
+		"socket.io-client": "^4.8.1",
+		"zod": "^3.23.8"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.0",
