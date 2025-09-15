@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { RecipeDetailView } from "@/components/RecipeDetailView";
 import type { ServerMessage } from "@/types/express";
-import { type CuttingMethodKey, methodToVideoUrl } from "@/types/express";
 import type { RecipeDetail } from "@/types/recipe";
 
 // このページは RecipeDetailView と ActionRenderer を用いて
@@ -33,159 +32,62 @@ function buildMockRecipe(): RecipeDetail {
 	};
 }
 
-function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
-	const messages: Array<{ label: string; message: ServerMessage }> = [];
-
-	// timer
-	messages.push(
-		{
-			label: "タイマー 1秒 START",
-			message: { kind: "timer", payload: { method: "START", seconds: 1 } },
-		},
-		{
-			label: "タイマー 10秒 START",
-			message: { kind: "timer", payload: { method: "START", seconds: 10 } },
-		},
-		{
-			label: "タイマー 5秒 START",
-			message: { kind: "timer", payload: { method: "START", seconds: 5 } },
-		},
-		{
-			label: "タイマー 5分 START",
-			message: { kind: "timer", payload: { method: "START", seconds: 300 } },
-		},
-		{
-			label: "タイマー 5秒 STOP",
-			message: { kind: "timer", payload: { method: "STOP", seconds: 5 } },
-		},
-		{
-			label: "タイマー 5秒 RESTART",
-			message: { kind: "timer", payload: { method: "RESTART", seconds: 5 } },
-		},
-		{
-			label: "タイマー 5分 RESET",
-			message: { kind: "timer", payload: { method: "RESET", seconds: 300 } },
-		},
-		{
-			label: "タイマー 5分 RESTART",
-			message: { kind: "timer", payload: { method: "RESTART", seconds: 300 } },
-		},
-		{
-			label: "タイマー 10秒 STOP",
-			message: { kind: "timer", payload: { method: "STOP", seconds: 10 } },
-		},
-		{
-			label: "タイマー 10秒 RESET",
-			message: { kind: "timer", payload: { method: "RESET", seconds: 10 } },
-		},
-		{
-			label: "タイマー 10秒 RESTART",
-			message: { kind: "timer", payload: { method: "RESTART", seconds: 10 } },
-		},
-		{
-			label: "タイマー CLOSE",
-			message: { kind: "timer", payload: { method: "CLOSE", seconds: 5 } },
-		},
-	);
-
-	// methodToVideo for all cutting methods
-	const cuttingKeys = Object.keys(methodToVideoUrl) as CuttingMethodKey[];
-	cuttingKeys.forEach((key) => {
-		messages.push(
-			{
-				label: `作り方動画 START (${key})`,
-				message: {
-					kind: "methodToVideo",
-					payload: { method: "START", videoType: key },
-				},
-			},
-			{
-				label: `作り方動画 STOP (${key})`,
-				message: {
-					kind: "methodToVideo",
-					payload: { method: "STOP", videoType: key },
-				},
-			},
-			{
-				label: `作り方動画 CLOSE (${key})`,
-				message: {
-					kind: "methodToVideo",
-					payload: { method: "CLOSE", videoType: key },
-				},
-			},
-			{
-				label: `作り方動画 RESET (${key})`,
-				message: {
-					kind: "methodToVideo",
-					payload: { method: "RESET", videoType: key },
-				},
-			},
-			{
-				label: `作り方動画 RESTART (${key})`,
-				message: {
-					kind: "methodToVideo",
-					payload: { method: "RESTART", videoType: key },
-				},
-			},
-		);
-	});
-
-	// videoControll
-	messages.push(
-		{
-			label: "動画コントロール PLAY",
-			message: { kind: "videoControll", payload: { instruction: "PLAY" } },
-		},
-		{
-			label: "動画コントロール PAUSE",
-			message: { kind: "videoControll", payload: { instruction: "PAUSE" } },
-		},
-		{
-			label: "動画コントロール REWIND 5s",
-			message: {
-				kind: "videoControll",
-				payload: { instruction: "REWIND", time: 5 },
-			},
-		},
-		{
-			label: "動画コントロール REWIND (default 10s)",
-			message: { kind: "videoControll", payload: { instruction: "REWIND" } },
-		},
-		{
-			label: "動画コントロール FORWARD 15s",
-			message: {
-				kind: "videoControll",
-				payload: { instruction: "FORWARD", time: 15 },
-			},
-		},
-	);
-
-	messages.push(
-		{
-			label: "ユーザと話す機能 'こんにちは'",
-			message: { kind: "withTalkUser", payload: { talkMessage: "こんにちは" } },
-		},
-		{
-			label: "ユーザと話す機能 '次の手順を教えて'",
-			message: {
-				kind: "withTalkUser",
-				payload: { talkMessage: "次の手順を教えて" },
-			},
-		},
-	);
-
-	messages.push({
-		label: "エラー 'サンプルエラー'",
-		message: { kind: "error", payload: { message: "サンプルエラー" } },
-	});
-
-	return messages;
+// 自然言語でのコマンド例一覧（クリックでAPIに送る）
+function buildNaturalLanguageCommands(): string[] {
+	return [
+		// タイマー
+		"タイマー5分セットして",
+		"タイマーを10秒で開始",
+		"タイマーを停止",
+		"タイマーをリセット",
+		"タイマーを再開",
+		"タイマーを閉じて",
+		// 動画操作
+		"動画を再生して",
+		"動画を一時停止して",
+		"5秒巻き戻して",
+		"15秒早送りして",
+		// 作り方動画（切り方など）
+		"いちょう切りのやり方を見せて",
+		"玉ねぎのみじん切りを再生",
+		"作り方動画を止めて",
+		"作り方動画を閉じて",
+		// 会話
+		"次の手順を教えて",
+		"こんにちは",
+	];
 }
 
 export default function TestPage() {
 	const recipe = useMemo(buildMockRecipe, []);
-	const allMessages = useMemo(() => buildAllMessages(), []);
+	const queries = useMemo(() => buildNaturalLanguageCommands(), []);
 	const [selected, setSelected] = useState<ServerMessage | null>(null);
+	const [loading, setLoading] = useState<string | null>(null);
+	const [error, setError] = useState<string | null>(null);
+
+	async function sendQuery(q: string) {
+		try {
+			setError(null);
+			setLoading(q);
+			setSelected(null);
+			const res = await fetch(
+				`/api/voice-command?recipe_id=${encodeURIComponent(recipe.id)}`,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ speechText: q }),
+				},
+			);
+			const data = (await res.json()) as ServerMessage;
+			setSelected(data);
+			console.log("API応答:", data);
+		} catch (e) {
+			console.error(e);
+			setError("API通信に失敗しました");
+		} finally {
+			setLoading(null);
+		}
+	}
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -206,26 +108,33 @@ export default function TestPage() {
 
 					<aside className="lg:col-span-1">
 						<div className="bg-white rounded-md shadow p-4">
-							<h2 className="font-semibold mb-3">メッセージ送出 (網羅)</h2>
+							<h2 className="font-semibold mb-3">
+								自然言語 → API → ServerMessage
+							</h2>
 							<div className="flex gap-2 mb-3">
 								<button
 									type="button"
 									className="px-3 py-1 bg-gray-200 rounded text-sm"
-									onClick={() => setSelected(null)}
+									onClick={() => {
+										setSelected(null);
+										setError(null);
+									}}
 									aria-label="clear-selected"
 								>
 									Clear
 								</button>
 							</div>
+							{error && <p className="text-red-600 text-sm mb-2">{error}</p>}
 							<ul className="space-y-2 max-h-[60vh] overflow-auto pr-1">
-								{allMessages.map(({ label, message }) => (
-									<li key={label}>
+								{queries.map((q) => (
+									<li key={q}>
 										<button
 											type="button"
-											onClick={() => setSelected(message)}
-											className="w-full text-left px-3 py-2 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 text-sm"
+											onClick={() => sendQuery(q)}
+											className="w-full text-left px-3 py-2 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 text-sm disabled:opacity-50"
+											disabled={loading !== null}
 										>
-											{label}
+											{loading === q ? "送信中…" : q}
 										</button>
 									</li>
 								))}
@@ -242,8 +151,9 @@ export default function TestPage() {
 							経由の制御イベントを受け取ります。
 						</li>
 						<li>
-							右側のボタンで <code>ServerMessage</code> を送出し、ActionRenderer
-							が適切に処理するか確認できます。
+							右側の自然言語ボタンをクリックすると、API (/api/voice-command) に
+							POST され、返却された <code>ServerMessage</code> を ActionRenderer
+							が処理します。
 						</li>
 						<li>
 							videoControll 系は Next.js API (/api/video-controller) を叩き、SSE

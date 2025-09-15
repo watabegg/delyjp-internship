@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { apiPost } from "@/lib/api/client";
+import type { ServerMessage } from "@/types/express";
 import type { TranscriptionResult, VoiceStatus } from "@/types/realtime";
 import type { RecipeDetail } from "@/types/recipe";
 import { RecipeDetailView } from "./RecipeDetailView";
@@ -10,13 +13,26 @@ interface RecipeDetailWrapperProps {
 }
 
 export function RecipeDetailWrapper({ recipe }: RecipeDetailWrapperProps) {
+	const [message, setMessage] = useState<ServerMessage | null>(null);
+
 	const handleStatusChange = (status: VoiceStatus) => {
 		console.log("[RECIPE-WRAPPER] 音声ステータス変更:", status);
 	};
 
-	const handleTranscript = (result: TranscriptionResult) => {
-		console.log("[RECIPE-WRAPPER] 転写結果受信:", result);
-		// ここで転写結果をエージェントに送信したり、他の処理を行う
+	const handleTranscript = async (result: TranscriptionResult) => {
+		if (result.is_final) {
+			console.log("[RECIPE-WRAPPER] 最終転写結果:", result.transcript);
+			// APIに送信して応答を取得
+			try {
+				const res = await apiPost(`/api/voice-command?recipe_id=${recipe.id}`, {
+					speechText: result.transcript,
+				});
+				console.log("[RECIPE-WRAPPER] API応答:", res);
+				setMessage(res);
+			} catch (error) {
+				console.error("[RECIPE-WRAPPER] APIエラー:", error);
+			}
+		}
 	};
 
 	const handleError = (error: string) => {
@@ -26,7 +42,7 @@ export function RecipeDetailWrapper({ recipe }: RecipeDetailWrapperProps) {
 	return (
 		<>
 			{/* 既存のレシピ詳細表示 */}
-			<RecipeDetailView recipe={recipe} message={null} />
+			<RecipeDetailView recipe={recipe} message={message} />
 
 			{/* 音声インターフェース */}
 			<VoiceInterface
