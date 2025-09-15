@@ -35,4 +35,3 @@ export function useIgnoreKonnichiwa(): IgnoreGreetingFn {
 }
 
 export default useIgnoreKonnichiwa;
-

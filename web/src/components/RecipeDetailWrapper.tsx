@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import useIgnoreKonnichiwa from "@/hooks/useIgnoreKonnichiwa";
 import { apiPost } from "@/lib/api/client";
 import type { ServerMessage } from "@/types/express";
 import type { TranscriptionResult, VoiceStatus } from "@/types/realtime";
 import type { RecipeDetail } from "@/types/recipe";
 import { RecipeDetailView } from "./RecipeDetailView";
 import VoiceInterface from "./VoiceInterface";
-import useIgnoreKonnichiwa from "@/hooks/useIgnoreKonnichiwa";
 
 interface RecipeDetailWrapperProps {
 	recipe: RecipeDetail;
@@ -15,6 +15,7 @@ interface RecipeDetailWrapperProps {
 
 export function RecipeDetailWrapper({ recipe }: RecipeDetailWrapperProps) {
 	const [message, setMessage] = useState<ServerMessage | null>(null);
+	const ignoreKonnichiwa = useIgnoreKonnichiwa();
 
 	const handleStatusChange = (status: VoiceStatus) => {
 		console.log("[RECIPE-WRAPPER] 音声ステータス変更:", status);
@@ -23,7 +24,6 @@ export function RecipeDetailWrapper({ recipe }: RecipeDetailWrapperProps) {
 	const handleTranscript = async (result: TranscriptionResult) => {
 		if (result.is_final) {
 			console.log("[RECIPE-WRAPPER] 最終転写結果:", result.transcript);
-			const ignoreKonnichiwa = useIgnoreKonnichiwa();
 			const filteredText = ignoreKonnichiwa(result.transcript);
 			try {
 				const res = await apiPost(`/api/voice-command?recipe_id=${recipe.id}`, {
