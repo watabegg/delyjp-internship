@@ -39,6 +39,14 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 	// timer
 	messages.push(
 		{
+			label: "タイマー 1秒 START",
+			message: { kind: "timer", payload: { method: "START", seconds: 1 } },
+		},
+		{
+			label: "タイマー 10秒 START",
+			message: { kind: "timer", payload: { method: "START", seconds: 10 } },
+		},
+		{
 			label: "タイマー 5秒 START",
 			message: { kind: "timer", payload: { method: "START", seconds: 5 } },
 		},
@@ -51,8 +59,28 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 			message: { kind: "timer", payload: { method: "STOP", seconds: 5 } },
 		},
 		{
+			label: "タイマー 5秒 RESTART",
+			message: { kind: "timer", payload: { method: "RESTART", seconds: 5 } },
+		},
+		{
 			label: "タイマー 5分 RESET",
 			message: { kind: "timer", payload: { method: "RESET", seconds: 300 } },
+		},
+		{
+			label: "タイマー 5分 RESTART",
+			message: { kind: "timer", payload: { method: "RESTART", seconds: 300 } },
+		},
+		{
+			label: "タイマー 10秒 STOP",
+			message: { kind: "timer", payload: { method: "STOP", seconds: 10 } },
+		},
+		{
+			label: "タイマー 10秒 RESET",
+			message: { kind: "timer", payload: { method: "RESET", seconds: 10 } },
+		},
+		{
+			label: "タイマー 10秒 RESTART",
+			message: { kind: "timer", payload: { method: "RESTART", seconds: 10 } },
 		},
 		{
 			label: "タイマー CLOSE",
@@ -90,6 +118,13 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 				message: {
 					kind: "methodToVideo",
 					payload: { method: "RESET", videoType: key },
+				},
+			},
+			{
+				label: `作り方動画 RESTART (${key})`,
+				message: {
+					kind: "methodToVideo",
+					payload: { method: "RESTART", videoType: key },
 				},
 			},
 		);
@@ -216,7 +251,9 @@ export default function TestPage() {
 						</li>
 						<li>
 							methodToVideo/timer はそれぞれのダイアログを開閉します。STOP
-							は閉じる判定のみでダイアログは表示されません。
+							は再生/カウントを停止、RESET は先頭に戻して再生、RESTART
+							は一時停止から再開します（ダイアログは閉じません）。CLOSE
+							はダイアログを閉じます。
 						</li>
 					</ul>
 				</section>

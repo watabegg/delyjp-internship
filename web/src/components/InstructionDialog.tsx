@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { forwardRef, useId, useImperativeHandle, useRef } from "react";
 import { type CuttingMethodKey, methodToVideoUrl } from "../types/express";
 import Dialog from "./ui/Dialog";
 
@@ -15,19 +15,52 @@ export const cuttingMethodOptions: {
 export const getInstructionVideoUrl = (method?: CuttingMethodKey | null) =>
 	method ? methodToVideoUrl[method].url : undefined;
 
+export type InstructionDialogHandle = {
+	stop: () => void; // 一時停止
+	reset: () => void; // 先頭に戻して再生
+	restart: () => void; // 一時停止状態から再生
+};
+
 type InstructionDialogProps = {
 	open: boolean;
 	onClose: () => void;
 	method: CuttingMethodKey | null;
 };
 
-const InstructionDialog = ({
-	open,
-	onClose,
-	method,
-}: InstructionDialogProps) => {
+const InstructionDialog = forwardRef<
+	InstructionDialogHandle,
+	InstructionDialogProps
+>(({ open, onClose, method }, ref) => {
 	const url = method ? methodToVideoUrl[method].url : undefined;
 	const dialogId = useId();
+	const videoRef = useRef<HTMLVideoElement | null>(null);
+
+	useImperativeHandle(ref, () => ({
+		stop: () => {
+			const v = videoRef.current;
+			if (!v) return;
+			try {
+				v.pause();
+			} catch {}
+		},
+		reset: () => {
+			const v = videoRef.current;
+			if (!v) return;
+			try {
+				v.currentTime = 0;
+				void v.play();
+			} catch {}
+		},
+		restart: () => {
+			const v = videoRef.current;
+			if (!v) return;
+			try {
+				void v.play();
+			} catch {}
+		},
+	}));
+
+	// 再生制御は親からの命令（stop/reset）で行う。method 変更時は key で再マウントして先頭から再生。
 
 	return (
 		<Dialog
@@ -39,6 +72,8 @@ const InstructionDialog = ({
 		>
 			{url ? (
 				<video
+					key={method ?? "none"}
+					ref={videoRef}
 					controls
 					autoPlay
 					className="w-full h-full max-h-[80vh]"
@@ -56,6 +91,8 @@ const InstructionDialog = ({
 			)}
 		</Dialog>
 	);
-};
+});
+
+InstructionDialog.displayName = "InstructionDialog";
 
 export default InstructionDialog;

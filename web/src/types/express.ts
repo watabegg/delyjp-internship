@@ -41,7 +41,7 @@ export type CuttingMethodKey = keyof typeof methodToVideoUrl;
 
 export type ControllerInstruction = "PLAY" | "PAUSE" | "REWIND" | "FORWARD";
 
-export type ActionMethod = "START" | "STOP" | "RESET" | "CLOSE";
+export type ActionMethod = "START" | "STOP" | "RESET" | "CLOSE" | "RESTART";
 
 export type PayloadMap = {
 	timer: { method: ActionMethod; seconds: number };
