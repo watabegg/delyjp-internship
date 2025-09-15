@@ -230,11 +230,8 @@ export class GeminiAIService {
             parsedOutput = JSON.parse(toolResult);
           } catch {
             parsedOutput = {
-              label: "エラー",
-              message: {
-                kind: "error",
-                payload: { message: toolResult },
-              },
+              kind: "error",
+              payload: { message: toolResult },
             };
           }
 
@@ -267,11 +264,8 @@ export class GeminiAIService {
           return {
             pattern: 2,
             response: {
-              label: "レシピ情報",
-              message: {
-                kind: "withTalkUser",
-                payload: { talkMessage: aiResponse },
-              },
+              kind: "withTalkUser",
+              payload: { talkMessage: aiResponse },
             },
           };
         }
@@ -284,11 +278,8 @@ export class GeminiAIService {
         return {
           pattern: 3,
           response: {
-            label: "AI回答",
-            message: {
-              kind: "withTalkUser",
-              payload: { talkMessage: aiResponse },
-            },
+            kind: "withTalkUser",
+            payload: { talkMessage: aiResponse },
           },
         };
       }
@@ -297,12 +288,9 @@ export class GeminiAIService {
       return {
         pattern: 3,
         response: {
-          label: "エラー",
-          message: {
-            kind: "error",
-            payload: {
-              message: "申し訳ありません。処理中にエラーが発生しました。",
-            },
+          kind: "error",
+          payload: {
+            message: "申し訳ありません。処理中にエラーが発生しました。",
           },
         },
       };
@@ -327,13 +315,10 @@ export class GeminiAIService {
 
       case "method_video":
         return JSON.stringify({
-          label: `作り方動画 ${args.method} (${args.videoType})`,
-          message: {
-            kind: "methodToVideo",
-            payload: {
-              method: args.method,
-              videoType: args.videoType,
-            },
+          kind: "methodToVideo",
+          payload: {
+            method: args.method,
+            videoType: args.videoType,
           },
         });
 
@@ -344,18 +329,9 @@ export class GeminiAIService {
           payload.time = args.time;
         }
 
-        // ラベル作成
-        let label = `動画コントロール ${args.instruction}`;
-        if (args.time !== undefined) {
-          label += ` ${args.time}s`;
-        }
-
         return JSON.stringify({
-          label: label,
-          message: {
-            kind: "videoControll",
-            payload: payload,
-          },
+          kind: "videoControll",
+          payload: payload,
         });
 
       case "timer_control":
@@ -363,26 +339,11 @@ export class GeminiAIService {
         const totalSeconds = (args.minutes || 0) * 60 + (args.seconds || 0);
         const timerSeconds = totalSeconds > 0 ? totalSeconds : 300; // デフォルト5分
 
-        // ラベル作成
-        const minutes = Math.floor(timerSeconds / 60);
-        const seconds = timerSeconds % 60;
-        let timerLabel = `タイマー `;
-        if (minutes > 0) {
-          timerLabel += `${minutes}分`;
-        }
-        if (seconds > 0) {
-          timerLabel += `${seconds}秒`;
-        }
-        timerLabel += ` ${args.method}`;
-
         return JSON.stringify({
-          label: timerLabel,
-          message: {
-            kind: "timer",
-            payload: {
-              method: args.method,
-              seconds: timerSeconds,
-            },
+          kind: "timer",
+          payload: {
+            method: args.method,
+            seconds: timerSeconds,
           },
         });
 

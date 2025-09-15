@@ -94,11 +94,8 @@ export function createMethodVideoTool() {
       console.log(`🎬 [Tool] 調理法動画実行: ${method}, ${videoType}`);
 
       return JSON.stringify({
-        label: `作り方動画 ${method} (${videoType})`,
-        message: {
-          kind: "methodToVideo",
-          payload: { method, videoType },
-        },
+        kind: "methodToVideo",
+        payload: { method, videoType },
       });
     },
   });
@@ -126,18 +123,9 @@ export function createVideoControlTool() {
         payload.time = time;
       }
 
-      // ラベル作成
-      let label = `動画コントロール ${instruction}`;
-      if (time !== undefined) {
-        label += ` ${time}s`;
-      }
-
       return JSON.stringify({
-        label: label,
-        message: {
-          kind: "videoControll",
-          payload: payload,
-        },
+        kind: "videoControll",
+        payload: payload,
       });
     },
   });
@@ -167,24 +155,9 @@ export function createTimerControlTool() {
       const totalSeconds = (minutes || 0) * 60 + (seconds || 0);
       const timerSeconds = totalSeconds > 0 ? totalSeconds : 300; // デフォルト5分
 
-      // ラベル作成
-      const mins = Math.floor(timerSeconds / 60);
-      const secs = timerSeconds % 60;
-      let timerLabel = `タイマー `;
-      if (mins > 0) {
-        timerLabel += `${mins}分`;
-      }
-      if (secs > 0) {
-        timerLabel += `${secs}秒`;
-      }
-      timerLabel += ` ${method}`;
-
       return JSON.stringify({
-        label: timerLabel,
-        message: {
-          kind: "timer",
-          payload: { method, seconds: timerSeconds },
-        },
+        kind: "timer",
+        payload: { method, seconds: timerSeconds },
       });
     },
   });
