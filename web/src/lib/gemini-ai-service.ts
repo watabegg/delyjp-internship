@@ -1,4 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+  SchemaType,
+  FunctionDeclaration,
+} from "@google/generative-ai";
 import { createRecipeSearchTool } from "./tools";
 
 // Gemini Function Calling 対応 AI処理サービス
@@ -6,16 +10,16 @@ export class GeminiAIService {
   private static genAI: GoogleGenerativeAI | null = null;
 
   // Function Callingの定義
-  private static functionDeclarations = [
+  private static functionDeclarations: FunctionDeclaration[] = [
     {
       name: "recipe_search",
       description:
         "レシピを検索して詳細な情報を取得する。料理名や食材名で検索できます。",
       parameters: {
-        type: "object",
+        type: SchemaType.OBJECT,
         properties: {
           query: {
-            type: "string",
+            type: SchemaType.STRING,
             description: "検索する料理名や食材名",
           },
         },
@@ -27,15 +31,17 @@ export class GeminiAIService {
       description:
         "特定の調理法（切り方など）の動画を制御する。rectangles（短冊切り）、shavingCut（そぎ切り）、chop（ぶつ切り）、wedges（くし形切り）、mince（みじん切り）、dice（角切り）、shred（千切り）など",
       parameters: {
-        type: "object",
+        type: SchemaType.OBJECT,
         properties: {
           method: {
-            type: "string",
-            enum: ["START", "STOP", "CLOSE", "RESET"],
+            type: SchemaType.STRING,
+            format: "enum" as const,
+            enum: ["START", "STOP", "CLOSE", "RESET"] as const,
             description: "動画の操作（開始、停止、閉じる、リセット）",
           },
           videoType: {
-            type: "string",
+            type: SchemaType.STRING,
+            format: "enum" as const,
             enum: [
               "rectangles",
               "shavingCut",
@@ -44,7 +50,7 @@ export class GeminiAIService {
               "mince",
               "dice",
               "shred",
-            ],
+            ] as const,
             description: "調理法の種類",
           },
         },
@@ -55,15 +61,16 @@ export class GeminiAIService {
       name: "video_control",
       description: "動画の再生制御を行う。再生、一時停止、早送り、巻き戻しなど",
       parameters: {
-        type: "object",
+        type: SchemaType.OBJECT,
         properties: {
           instruction: {
-            type: "string",
-            enum: ["PLAY", "PAUSE", "REWIND", "FORWARD"],
+            type: SchemaType.STRING,
+            format: "enum" as const,
+            enum: ["PLAY", "PAUSE", "REWIND", "FORWARD"] as const,
             description: "実行する操作",
           },
           time: {
-            type: "number",
+            type: SchemaType.NUMBER,
             description: "早送り/巻き戻しの秒数（省略可）",
           },
         },
@@ -75,19 +82,20 @@ export class GeminiAIService {
       description:
         "料理タイマーを操作する。分や秒を指定してタイマーを開始できます。",
       parameters: {
-        type: "object",
+        type: SchemaType.OBJECT,
         properties: {
           method: {
-            type: "string",
-            enum: ["START", "STOP", "RESET", "CLOSE"],
+            type: SchemaType.STRING,
+            format: "enum" as const,
+            enum: ["START", "STOP", "RESET", "CLOSE"] as const,
             description: "タイマーの操作",
           },
           minutes: {
-            type: "number",
+            type: SchemaType.NUMBER,
             description: "タイマーの分数",
           },
           seconds: {
-            type: "number",
+            type: SchemaType.NUMBER,
             description: "タイマーの秒数",
           },
         },
