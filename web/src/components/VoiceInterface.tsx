@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { VoiceStatus, TranscriptionResult } from "@/types/realtime";
 import { useRealtimeVoice } from "@/hooks/useRealtimeVoice";
+import type { TranscriptionResult, VoiceStatus } from "@/types/realtime";
 
 interface VoiceInterfaceProps {
 	onStatusChange?: (status: VoiceStatus) => void;
@@ -15,49 +15,85 @@ export default function VoiceInterface({
 	onTranscript,
 	onError,
 }: VoiceInterfaceProps = {}) {
-	const { status, isRecording, connect, disconnect, startRecording, stopRecording, error } =
-		useRealtimeVoice({
-			onStatusChange,
-			onTranscript: (result) => {
-				console.log("[VOICE-INTERFACE] 転写結果:", result.transcript);
-				setTranscriptHistory(prev => [...prev, { 
-					timestamp: new Date().toLocaleTimeString(), 
-					text: result.transcript 
-				}]);
-				onTranscript?.(result);
-			},
-			onError,
-			onMessage: (messageType, message) => {
-				setRecentMessages(prev => [...prev.slice(-9), {
+	const {
+		status,
+		isRecording,
+		connect,
+		disconnect,
+		startRecording,
+		stopRecording,
+		error,
+	} = useRealtimeVoice({
+		onStatusChange,
+		onTranscript: (result) => {
+			console.log("[VOICE-INTERFACE] 転写結果:", result.transcript);
+			setTranscriptHistory((prev) => [
+				...prev,
+				{
 					timestamp: new Date().toLocaleTimeString(),
-					type: messageType
-				}]);
-			},
-		});
+					text: result.transcript,
+				},
+			]);
+			onTranscript?.(result);
+		},
+		onError,
+		onMessage: (messageType, message) => {
+			setRecentMessages((prev) => [
+				...prev.slice(-9),
+				{
+					timestamp: new Date().toLocaleTimeString(),
+					type: messageType,
+				},
+			]);
+		},
+	});
 
 	const [shouldAutoStart, setShouldAutoStart] = useState(false);
-	const [transcriptHistory, setTranscriptHistory] = useState<Array<{timestamp: string, text: string}>>([]);
-	const [debugLogs, setDebugLogs] = useState<Array<{timestamp: string, message: string, type: 'info' | 'error' | 'success'}>>([]);
-	const [recentMessages, setRecentMessages] = useState<Array<{timestamp: string, type: string}>>([]);
+	const [transcriptHistory, setTranscriptHistory] = useState<
+		Array<{ timestamp: string; text: string }>
+	>([]);
+	const [debugLogs, setDebugLogs] = useState<
+		Array<{
+			timestamp: string;
+			message: string;
+			type: "info" | "error" | "success";
+		}>
+	>([]);
+	const [recentMessages, setRecentMessages] = useState<
+		Array<{ timestamp: string; type: string }>
+	>([]);
 
 	// デバッグログを追加する関数
-	const addDebugLog = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
-		setDebugLogs(prev => [...prev.slice(-9), { 
-			timestamp: new Date().toLocaleTimeString(), 
-			message, 
-			type 
-		}]);
+	const addDebugLog = (
+		message: string,
+		type: "info" | "error" | "success" = "info",
+	) => {
+		setDebugLogs((prev) => [
+			...prev.slice(-9),
+			{
+				timestamp: new Date().toLocaleTimeString(),
+				message,
+				type,
+			},
+		]);
 	};
 
 	// ステータス変更を監視してログに追加
 	useEffect(() => {
-		addDebugLog(`ステータス変更: ${status}`, status === 'error' ? 'error' : status === 'connected' ? 'success' : 'info');
+		addDebugLog(
+			`ステータス変更: ${status}`,
+			status === "error"
+				? "error"
+				: status === "connected"
+					? "success"
+					: "info",
+		);
 	}, [status]);
 
 	// エラーを監視してログに追加
 	useEffect(() => {
 		if (error) {
-			addDebugLog(`エラー: ${error}`, 'error');
+			addDebugLog(`エラー: ${error}`, "error");
 		}
 	}, [error]);
 
@@ -114,7 +150,7 @@ export default function VoiceInterface({
 
 	const handleMicClick = () => {
 		if (status === "disconnected") {
-			addDebugLog("接続開始...", 'info');
+			addDebugLog("接続開始...", "info");
 			setShouldAutoStart(true);
 			connect();
 			return;
@@ -122,14 +158,19 @@ export default function VoiceInterface({
 
 		if (status === "connecting") {
 			// 接続待ち。接続完了時に自動で録音開始
-			addDebugLog("接続完了後に録音開始予定", 'info');
+			addDebugLog("接続完了後に録音開始予定", "info");
 			setShouldAutoStart(true);
 			return;
 		}
 
-		if (isRecording || status === "listening" || status === "processing" || status === "speaking") {
+		if (
+			isRecording ||
+			status === "listening" ||
+			status === "processing" ||
+			status === "speaking"
+		) {
 			// 再クリックで完全停止・切断
-			addDebugLog("録音停止・完全切断", 'info');
+			addDebugLog("録音停止・完全切断", "info");
 			stopRecording();
 			disconnect();
 			return;
@@ -137,7 +178,7 @@ export default function VoiceInterface({
 
 		// 接続済み（待機中）なら録音開始
 		if (status === "connected") {
-			addDebugLog("録音開始", 'success');
+			addDebugLog("録音開始", "success");
 			startRecording();
 		}
 	};
@@ -177,14 +218,21 @@ export default function VoiceInterface({
 				{/* ステータス表示 */}
 				<div className="mb-3 p-2 bg-gray-800 rounded">
 					<div className="flex items-center gap-2 mb-1">
-						<div className={`w-3 h-3 rounded-full ${
-							status === 'connected' ? 'bg-green-400' : 
-							status === 'error' ? 'bg-red-400' :
-							status === 'connecting' ? 'bg-yellow-400 animate-pulse' :
-							status === 'listening' ? 'bg-blue-400 animate-pulse' :
-							status === 'processing' ? 'bg-orange-400 animate-pulse' :
-							'bg-gray-400'
-						}`}></div>
+						<div
+							className={`w-3 h-3 rounded-full ${
+								status === "connected"
+									? "bg-green-400"
+									: status === "error"
+										? "bg-red-400"
+										: status === "connecting"
+											? "bg-yellow-400 animate-pulse"
+											: status === "listening"
+												? "bg-blue-400 animate-pulse"
+												: status === "processing"
+													? "bg-orange-400 animate-pulse"
+													: "bg-gray-400"
+							}`}
+						></div>
 						<span className="font-bold">ステータス: {status}</span>
 					</div>
 					{isRecording && <div className="text-red-400">🔴 録音中</div>}
@@ -213,11 +261,16 @@ export default function VoiceInterface({
 					<div className="text-blue-400 font-bold mb-1">🔧 デバッグログ:</div>
 					<div className="bg-gray-800 rounded p-2 max-h-32 overflow-y-auto">
 						{debugLogs.map((log, index) => (
-							<div key={index} className={`mb-1 ${
-								log.type === 'error' ? 'text-red-400' :
-								log.type === 'success' ? 'text-green-400' :
-								'text-gray-300'
-							}`}>
+							<div
+								key={index}
+								className={`mb-1 ${
+									log.type === "error"
+										? "text-red-400"
+										: log.type === "success"
+											? "text-green-400"
+											: "text-gray-300"
+								}`}
+							>
 								<span className="text-gray-500">[{log.timestamp}]</span>
 								<span className="ml-2">{log.message}</span>
 							</div>
@@ -230,7 +283,9 @@ export default function VoiceInterface({
 
 				{/* メッセージタイプ履歴 */}
 				<div className="mt-3">
-					<div className="text-purple-400 font-bold mb-1">📡 受信メッセージ:</div>
+					<div className="text-purple-400 font-bold mb-1">
+						📡 受信メッセージ:
+					</div>
 					<div className="bg-gray-800 rounded p-2 max-h-24 overflow-y-auto">
 						{recentMessages.map((msg, index) => (
 							<div key={index} className="mb-1 text-xs">
@@ -246,19 +301,22 @@ export default function VoiceInterface({
 
 				{/* クリアボタン */}
 				<div className="mt-3 flex gap-2">
-					<button 
+					<button
+						type="button"
 						onClick={() => setTranscriptHistory([])}
 						className="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs"
 					>
 						転写クリア
 					</button>
-					<button 
+					<button
+						type="button"
 						onClick={() => setDebugLogs([])}
 						className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs"
 					>
 						ログクリア
 					</button>
-					<button 
+					<button
+						type="button"
 						onClick={() => setRecentMessages([])}
 						className="px-2 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs"
 					>
