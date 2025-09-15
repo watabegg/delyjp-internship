@@ -72,19 +72,11 @@ export async function POST(request: NextRequest) {
 				break;
 		}
 
-		// ログ出力（開発時のデバッグ用）
-		console.log(
-			`[VIDEO_CONTROL] ${new Date().toISOString()} - Recipe: ${recipeId}, Action: ${instruction}${time ? `, Time: ${time}秒` : ""}`,
-		);
-
-		// Server-Sent Events でクライアントにビデオ制御イベントを送信
-		console.log(`[VIDEO_CONTROL] SSEイベント送信開始: ${recipeId}`);
 		const eventSent = sendVideoControlEvent(recipeId, {
 			instruction,
 			time: actualTime,
 			message,
 		});
-		console.log(`[VIDEO_CONTROL] SSEイベント送信結果: ${eventSent}`);
 
 		// 成功レスポンス
 		return NextResponse.json({

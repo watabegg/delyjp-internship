@@ -2,7 +2,7 @@
 
 ## システム概要
 
-本システムは、Google Gemini の Function Calling 機能を使用して、ユーザーの音声入力を 3 つのパターンに自動分類し、適切な応答を返す AI クッキングアシスタントです。
+本システムは、Google Gemini の Function Calling 機能を使用して、ユーザーの音声入力を 3 つのパターンに自動分類し、適切な応答を返すAIクッキングアシスタントです。
 
 ### 全体アーキテクチャ図
 
@@ -33,14 +33,12 @@ graph TD
 Gemini の Function Calling 機能により、以下の 3 パターンが自動判定・実行されます：
 
 1. **パターン 1: コマンド型ツール実行**
-
    - **判断基準**: Gemini が Function Call を実行 かつ `isCommandTool(functionName) === true`
    - **対象ツール**: `method_video`, `video_control`, `timer_control`
    - **処理**: Function の実行結果 JSON をそのまま API レスポンスとして返却
    - **目的**: フロントエンドでの即座実行（動画制御、タイマー操作など）
 
 2. **パターン 2: 情報取得型ツール + AI 回答生成**
-
    - **判断基準**: Gemini が Function Call を実行 かつ `isCommandTool(functionName) === false`
    - **対象ツール**: `recipe_search`
    - **処理**: ツール実行結果を Gemini に送信 → AI が自然言語で詳細回答を生成
@@ -69,46 +67,27 @@ if (functionCalls && functionCalls.length > 0) {
   // 3. コマンド型ツール判定
   if (this.isCommandTool(functionName)) {
     // パターン1: Function実行結果JSONをそのまま返す
-    const toolResult = await this.executeFunction(
-      functionName,
-      functionArgs,
-      recipeId
-    );
+    const toolResult = await this.executeFunction(functionName, functionArgs, recipeId);
     return { pattern: 1, response: JSON.parse(toolResult) };
   } else {
     // パターン2: ツール実行→Geminiが回答生成
-    const toolResult = await this.executeFunction(
-      functionName,
-      functionArgs,
-      recipeId
-    );
-
+    const toolResult = await this.executeFunction(functionName, functionArgs, recipeId);
+    
     // ツール結果をGeminiに送信してAI回答生成
-    const followUpResult = await chat.sendMessage([
-      {
-        functionResponse: {
-          name: functionName,
-          response: { result: toolResult },
-        },
-      },
-    ]);
-
+    const followUpResult = await chat.sendMessage([{
+      functionResponse: { name: functionName, response: { result: toolResult } }
+    }]);
+    
     return {
       pattern: 2,
-      response: {
-        kind: "withTalkUser",
-        payload: { talkMessage: followUpResult.response.text() },
-      },
+      response: { kind: "withTalkUser", payload: { talkMessage: followUpResult.response.text() } }
     };
   }
 } else {
   // パターン3: Function Call未使用→AIの知識ベース回答
   return {
     pattern: 3,
-    response: {
-      kind: "withTalkUser",
-      payload: { talkMessage: response.text() },
-    },
+    response: { kind: "withTalkUser", payload: { talkMessage: response.text() } }
   };
 }
 ```
@@ -174,8 +153,7 @@ if (functionCalls && functionCalls.length > 0) {
 export function createRecipeSearchTool() {
   return new DynamicStructuredTool({
     name: "recipe_search",
-    description:
-      "ユーザーが指定したレシピIDでレシピの詳細情報を取得する。材料、手順、コツなどの完全な情報を提供します。",
+    description: "ユーザーが指定したレシピIDでレシピの詳細情報を取得する。材料、手順、コツなどの完全な情報を提供します。",
     schema: z.object({
       recipe_id: z.string().describe("ユーザーが指定したレシピのID"),
     }),
@@ -184,16 +162,13 @@ export function createRecipeSearchTool() {
 
       try {
         // Rails API からレシピ詳細を取得
-        const response = await fetch(
-          `http://localhost:3001/recipes/${recipe_id}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
-        );
+        const response = await fetch(`http://localhost:3001/recipes/${recipe_id}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
 
         if (!response.ok) throw new Error(`API Error: ${response.status}`);
-
+        
         const recipe = await response.json();
         const attrs = recipe.attributes || recipe;
 
@@ -204,33 +179,19 @@ export function createRecipeSearchTool() {
 ⏱️ 調理時間: ${attrs.cooking_time}分
 💰 推定費用: ${attrs.estimated_cost}円
 ⭐ 評価: ${attrs.review_score ? `${attrs.review_score}/5.0` : "未評価"}
-🏷️ カテゴリ: ${
-          Array.isArray(attrs.category)
-            ? attrs.category.join(", ")
-            : attrs.category
-        }
+🏷️ カテゴリ: ${Array.isArray(attrs.category) ? attrs.category.join(", ") : attrs.category}
 
 📝 説明: ${attrs.description || "レシピの詳細説明"}
 
-🥄 材料: ${
-          attrs.ingredients && Array.isArray(attrs.ingredients)
-            ? attrs.ingredients
-                .map((ing) => `• ${ing.name || ing}: ${ing.amount || ""}`)
-                .join("\n")
-            : "材料リストが利用できません"
-        }
+🥄 材料: ${attrs.ingredients && Array.isArray(attrs.ingredients) 
+  ? attrs.ingredients.map(ing => `• ${ing.name || ing}: ${ing.amount || ""}`).join("\n")
+  : "材料リストが利用できません"}
 
-👨‍🍳 作り方: ${
-          attrs.instructions && Array.isArray(attrs.instructions)
-            ? attrs.instructions
-                .map((step, i) => `${i + 1}. ${step.description || step}`)
-                .join("\n")
-            : "調理手順が利用できません"
-        }
+👨‍🍳 作り方: ${attrs.instructions && Array.isArray(attrs.instructions)
+  ? attrs.instructions.map((step, i) => `${i + 1}. ${step.description || step}`).join("\n")
+  : "調理手順が利用できません"}
 
-💡 コツ・ポイント: ${
-          attrs.tips || "美味しく作るためのコツをお聞かせください！"
-        }`;
+💡 コツ・ポイント: ${attrs.tips || "美味しく作るためのコツをお聞かせください！"}`;
 
         return formattedResult;
       } catch (error) {
@@ -247,10 +208,7 @@ export async function POST(req: NextRequest) {
   const { speechText } = await req.json();
 
   // Gemini Function Callingで3パターンを自動判定・処理
-  const agentResult = await GeminiAIService.processWithLangChainAgent(
-    speechText,
-    recipeId
-  );
+  const agentResult = await GeminiAIService.processWithLangChainAgent(speechText, recipeId);
 
   return NextResponse.json(agentResult.response);
 }
@@ -586,13 +544,13 @@ class VoiceCommandHandler {
 
 ## パターン別の特徴まとめ
 
-| パターン              | Gemini 処理                  | API 応答形式    | フロントエンド処理          |
-| --------------------- | ---------------------------- | --------------- | --------------------------- |
-| **レシピ詳細取得**    | Rails API 連携 + AI 回答生成 | `withTalkUser`  | チャット表示 + 音声読み上げ |
-| **調理法動画**        | パラメータ抽出のみ           | `methodToVideo` | 動画制御 + UI 表示          |
-| **動画操作**          | パラメータ抽出               | `videoControll` | プレーヤー操作 + 音声確認   |
-| **タイマー**          | 自然言語 → 数値変換          | `timer`         | タイマー操作 + UI 更新      |
-| **AI 知識ベース回答** | Gemini 知識のみで直接回答    | `withTalkUser`  | チャット表示 + 音声読み上げ |
+| パターン               | Gemini 処理                    | API 応答形式           | フロントエンド処理          |
+| ---------------------- | ------------------------------ | ---------------------- | --------------------------- |
+| **レシピ詳細取得**     | Rails API 連携 + AI 回答生成  | `withTalkUser`         | チャット表示 + 音声読み上げ |
+| **調理法動画**         | パラメータ抽出のみ             | `methodToVideo`        | 動画制御 + UI 表示          |
+| **動画操作**           | パラメータ抽出                 | `videoControll`        | プレーヤー操作 + 音声確認   |
+| **タイマー**           | 自然言語 → 数値変換            | `timer`                | タイマー操作 + UI 更新      |
+| **AI 知識ベース回答**  | Gemini 知識のみで直接回答      | `withTalkUser`         | チャット表示 + 音声読み上げ |
 
 ## 技術スタック
 

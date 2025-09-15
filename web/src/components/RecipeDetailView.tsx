@@ -2,154 +2,130 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { TTSProvider } from "@/contexts/TTSContext";
+import { VideoControlProvider } from "@/contexts/VideoControlContext";
 import type { ServerMessage } from "@/types/express";
 import type { RecipeDetail } from "@/types/recipe";
-import ActionRenderer from "./ActionRenderer";
-import { VideoController } from "./VideoController";
+import ActionRenderer from "../components/ActionRenderer";
+// import AudioSynthesize from "../components/AudioSynthesize";
+import { VideoController } from "../components/VideoController";
 
-const examplesServerMessage: ServerMessage[] = [
-	{
-		kind: "timer",
-		payload: { method: "START", seconds: 300 },
-	},
-	{
-		kind: "methodToVideo",
-		payload: { method: "START", videoType: "chop" },
-	},
-	{
-		kind: "videoControll",
-		payload: { instruction: "PAUSE", time: 60 },
-	},
-	{
-		kind: "withTalkUser",
-		payload: { talkMessage: "こんにちは" },
-	},
-	{
-		kind: "error",
-		payload: { message: "エラーが発生しました" },
-	},
-];
-
-export function RecipeDetailView({ recipe }: { recipe: RecipeDetail }) {
+export function RecipeDetailView({
+	recipe,
+	message,
+}: {
+	recipe: RecipeDetail;
+	message: ServerMessage | null;
+}) {
 	const { attributes } = recipe;
-	const [selectedMessage, setSelectedMessage] = useState<ServerMessage | null>(
-		null,
-	);
 
 	return (
-		<div className="min-h-screen bg-gray-50">
-			<div className="container mx-auto px-4 py-6">
-				<div className="mb-4">
-					<Link href="/" className="text-blue-600 hover:underline">
-						← 一覧に戻る
-					</Link>
-				</div>
-				<h1 className="text-2xl md:text-3xl font-bold mb-4">
-					{attributes.title}
-				</h1>
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-					<div className="md:col-span-2">
-						<div className="relative w-full bg-black aspect-video">
-							{attributes.video_url ? (
-								<VideoController
-									recipeId={recipe.id}
-									videoSrc={attributes.video_url}
-									className="w-full h-full aspect-video"
-								/>
-							) : attributes.thumbnail_url ? (
-								<Image
-									src={attributes.thumbnail_url}
-									alt={attributes.title}
-									fill
-									className="object-cover"
-								/>
-							) : (
-								<div className="w-full h-full flex items-center justify-center text-gray-400">
-									No Media
+		<TTSProvider recipeId={recipe.id}>
+			<VideoControlProvider recipeId={recipe.id}>
+				<div className="min-h-screen bg-gray-50">
+					<div className="container mx-auto px-4 py-6">
+						<div className="mb-4">
+							<Link href="/" className="text-blue-600 hover:underline">
+								← 一覧に戻る
+							</Link>
+						</div>
+						<h1 className="text-2xl md:text-3xl font-bold mb-4">
+							{attributes.title}
+						</h1>
+						<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+							<div className="md:col-span-2">
+								<div className="relative w-full bg-black">
+									{attributes.video_url ? (
+										<VideoController
+											recipeId={recipe.id}
+											videoSrc={attributes.video_url}
+											className="w-full h-full"
+										/>
+									) : attributes.thumbnail_url ? (
+										<Image
+											src={attributes.thumbnail_url}
+											alt={attributes.title}
+											fill
+											className="object-cover"
+										/>
+									) : (
+										<div className="w-full h-full flex items-center justify-center text-gray-400">
+											No Media
+										</div>
+									)}
 								</div>
-							)}
+								{attributes.description && (
+									<p className="mt-4 whitespace-pre-wrap text-gray-800">
+										{attributes.description}
+									</p>
+								)}
+								{message && (
+									<ActionRenderer message={message} recipeId={recipe.id} />
+								)}
+							</div>
+							<aside className="md:col-span-1 space-y-4">
+								<div className="bg-white p-4 rounded-md shadow">
+									<h2 className="font-semibold mb-2">基本情報</h2>
+									<ul className="text-sm text-gray-700 space-y-1">
+										{attributes.cooking_time != null && (
+											<li>⏱️ 調理時間: {attributes.cooking_time}分</li>
+										)}
+										{attributes.estimated_cost != null && (
+											<li>💰 コスト: ¥{attributes.estimated_cost}</li>
+										)}
+										{attributes.review_score != null && (
+											<li>★ レビュー: {attributes.review_score.toFixed(1)}</li>
+										)}
+										{attributes.category && attributes.category.length > 0 && (
+											<li>🏷️ カテゴリ: {attributes.category.join(", ")}</li>
+										)}
+									</ul>
+								</div>
+								{attributes.ingredients && (
+									<div className="bg-white p-4 rounded-md shadow">
+										<h2 className="font-semibold mb-2">材料</h2>
+										<pre className="text-sm whitespace-pre-wrap text-gray-800">
+											{attributes.ingredients}
+										</pre>
+									</div>
+								)}
+								{attributes.instructions &&
+									attributes.instructions.length > 0 && (
+										<div className="bg-white p-4 rounded-md shadow">
+											<h2 className="font-semibold mb-2">作り方</h2>
+											<ol className="list-none list-inside space-y-1 text-sm">
+												{attributes.instructions.map((step) => (
+													<li key={step}>{step}</li>
+												))}
+											</ol>
+										</div>
+									)}
+								{attributes.tips && attributes.tips.length > 0 && (
+									<div className="bg-white p-4 rounded-md shadow">
+										<h2 className="font-semibold mb-2">コツ</h2>
+										<ul className="list-disc list-inside space-y-1 text-sm">
+											{attributes.tips.map((tip) => (
+												<li key={tip}>{tip}</li>
+											))}
+										</ul>
+									</div>
+								)}
+								{attributes.comment && attributes.comment.length > 0 && (
+									<div className="bg-white p-4 rounded-md shadow">
+										<h2 className="font-semibold mb-2">コメント</h2>
+										<ul className="list-disc list-inside space-y-1 text-sm">
+											{attributes.comment.map((c) => (
+												<li key={c}>{c}</li>
+											))}
+										</ul>
+									</div>
+								)}
+							</aside>
 						</div>
-						{attributes.description && (
-							<p className="mt-4 whitespace-pre-wrap text-gray-800">
-								{attributes.description}
-							</p>
-						)}
-						<div className="mt-6 space-x-2">
-							{examplesServerMessage.map((msg) => (
-								<button
-									key={`${msg.kind}-${JSON.stringify(msg.payload)}`}
-									type="button"
-									onClick={() => setSelectedMessage(msg)}
-									className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-								>
-									{msg.kind} を実行
-								</button>
-							))}
-						</div>
-						{selectedMessage && (
-							<ActionRenderer message={selectedMessage} recipeId={recipe.id} />
-						)}
 					</div>
-					<aside className="md:col-span-1 space-y-4">
-						<div className="bg-white p-4 rounded-md shadow">
-							<h2 className="font-semibold mb-2">基本情報</h2>
-							<ul className="text-sm text-gray-700 space-y-1">
-								{attributes.cooking_time != null && (
-									<li>⏱️ 調理時間: {attributes.cooking_time}分</li>
-								)}
-								{attributes.estimated_cost != null && (
-									<li>💰 コスト: ¥{attributes.estimated_cost}</li>
-								)}
-								{attributes.review_score != null && (
-									<li>★ レビュー: {attributes.review_score.toFixed(1)}</li>
-								)}
-								{attributes.category && attributes.category.length > 0 && (
-									<li>🏷️ カテゴリ: {attributes.category.join(", ")}</li>
-								)}
-							</ul>
-						</div>
-						{attributes.ingredients && (
-							<div className="bg-white p-4 rounded-md shadow">
-								<h2 className="font-semibold mb-2">材料</h2>
-								<pre className="text-sm whitespace-pre-wrap text-gray-800">
-									{attributes.ingredients}
-								</pre>
-							</div>
-						)}
-						{attributes.instructions && attributes.instructions.length > 0 && (
-							<div className="bg-white p-4 rounded-md shadow">
-								<h2 className="font-semibold mb-2">作り方</h2>
-								<ol className="list-none list-inside space-y-1 text-sm">
-									{attributes.instructions.map((step) => (
-										<li key={step}>{step}</li>
-									))}
-								</ol>
-							</div>
-						)}
-						{attributes.tips && attributes.tips.length > 0 && (
-							<div className="bg-white p-4 rounded-md shadow">
-								<h2 className="font-semibold mb-2">コツ</h2>
-								<ul className="list-disc list-inside space-y-1 text-sm">
-									{attributes.tips.map((tip) => (
-										<li key={tip}>{tip}</li>
-									))}
-								</ul>
-							</div>
-						)}
-						{attributes.comment && attributes.comment.length > 0 && (
-							<div className="bg-white p-4 rounded-md shadow">
-								<h2 className="font-semibold mb-2">コメント</h2>
-								<ul className="list-disc list-inside space-y-1 text-sm">
-									{attributes.comment.map((c) => (
-										<li key={c}>{c}</li>
-									))}
-								</ul>
-							</div>
-						)}
-					</aside>
+					{/* TTS自動再生コンポーネント */}
 				</div>
-			</div>
-		</div>
+			</VideoControlProvider>
+		</TTSProvider>
 	);
 }

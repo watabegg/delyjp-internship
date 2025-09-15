@@ -2,12 +2,8 @@ import type { NextRequest } from "next/server";
 import { registerClient, unregisterClient } from "@/lib/video-events";
 
 export async function GET(request: NextRequest) {
-	console.log("[SSE API] GET リクエスト受信");
-
 	const { searchParams } = new URL(request.url);
 	const recipeId = searchParams.get("recipeId");
-
-	console.log(`[SSE API] recipeId: ${recipeId}`);
 
 	if (!recipeId) {
 		console.error("[SSE API] recipeId が提供されていません");
@@ -15,10 +11,11 @@ export async function GET(request: NextRequest) {
 	}
 
 	// Server-Sent Events のストリームを作成
+	let controllerRef: ReadableStreamDefaultController | undefined;
 	const stream = new ReadableStream({
 		start(controller) {
 			try {
-				console.log(`[SSE API] ストリーム開始: ${recipeId}`);
+				controllerRef = controller;
 
 				// クライアントを登録
 				registerClient(recipeId, controller);
@@ -31,7 +28,6 @@ export async function GET(request: NextRequest) {
 				})}\n\n`;
 
 				controller.enqueue(message);
-				console.log(`[SSE API] 接続確認メッセージ送信: ${recipeId}`);
 			} catch (error) {
 				console.error("[SSE API] ストリーム開始エラー:", error);
 			}
@@ -39,15 +35,12 @@ export async function GET(request: NextRequest) {
 		cancel() {
 			try {
 				// クライアント切断時にクリーンアップ
-				unregisterClient(recipeId);
-				console.log(`[SSE API] クライアント切断: ${recipeId}`);
+				unregisterClient(recipeId, controllerRef);
 			} catch (error) {
 				console.error("[SSE API] クリーンアップエラー:", error);
 			}
 		},
 	});
-
-	console.log(`[SSE API] レスポンス返却: ${recipeId}`);
 
 	return new Response(stream, {
 		headers: {

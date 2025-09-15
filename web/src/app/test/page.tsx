@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import ActionRenderer from "@/components/ActionRenderer";
 import { RecipeDetailView } from "@/components/RecipeDetailView";
 import type { ServerMessage } from "@/types/express";
 import { type CuttingMethodKey, methodToVideoUrl } from "@/types/express";
@@ -24,8 +23,8 @@ function buildMockRecipe(): RecipeDetail {
 			instructions: ["材料を切る", "フライパンで炒める", "味を整える"],
 			tips: ["強火にしすぎない", "塩は最後に入れる"],
 			review_score: 4.5,
-			// 公開テスト動画（汎用サンプル）
-			video_url: "https://www.w3schools.com/html/mov_bbb.mp4",
+			video_url:
+				"https://video.kurashiru.com/production/videos/013adbe4-3f17-4915-988e-e8e4dd4b1322/original.mp4",
 			thumbnail_url: null,
 			category: ["テスト", "デモ"],
 			comment: ["おいしかった", "簡単でした"],
@@ -40,16 +39,52 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 	// timer
 	messages.push(
 		{
-			label: "timer START 5s",
+			label: "タイマー 1秒 START",
+			message: { kind: "timer", payload: { method: "START", seconds: 1 } },
+		},
+		{
+			label: "タイマー 10秒 START",
+			message: { kind: "timer", payload: { method: "START", seconds: 10 } },
+		},
+		{
+			label: "タイマー 5秒 START",
 			message: { kind: "timer", payload: { method: "START", seconds: 5 } },
 		},
 		{
-			label: "timer START 300s",
+			label: "タイマー 5分 START",
 			message: { kind: "timer", payload: { method: "START", seconds: 300 } },
 		},
 		{
-			label: "timer STOP (5s)",
+			label: "タイマー 5秒 STOP",
 			message: { kind: "timer", payload: { method: "STOP", seconds: 5 } },
+		},
+		{
+			label: "タイマー 5秒 RESTART",
+			message: { kind: "timer", payload: { method: "RESTART", seconds: 5 } },
+		},
+		{
+			label: "タイマー 5分 RESET",
+			message: { kind: "timer", payload: { method: "RESET", seconds: 300 } },
+		},
+		{
+			label: "タイマー 5分 RESTART",
+			message: { kind: "timer", payload: { method: "RESTART", seconds: 300 } },
+		},
+		{
+			label: "タイマー 10秒 STOP",
+			message: { kind: "timer", payload: { method: "STOP", seconds: 10 } },
+		},
+		{
+			label: "タイマー 10秒 RESET",
+			message: { kind: "timer", payload: { method: "RESET", seconds: 10 } },
+		},
+		{
+			label: "タイマー 10秒 RESTART",
+			message: { kind: "timer", payload: { method: "RESTART", seconds: 10 } },
+		},
+		{
+			label: "タイマー CLOSE",
+			message: { kind: "timer", payload: { method: "CLOSE", seconds: 5 } },
 		},
 	);
 
@@ -58,17 +93,38 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 	cuttingKeys.forEach((key) => {
 		messages.push(
 			{
-				label: `methodToVideo START (${key})`,
+				label: `作り方動画 START (${key})`,
 				message: {
 					kind: "methodToVideo",
 					payload: { method: "START", videoType: key },
 				},
 			},
 			{
-				label: `methodToVideo STOP (${key})`,
+				label: `作り方動画 STOP (${key})`,
 				message: {
 					kind: "methodToVideo",
 					payload: { method: "STOP", videoType: key },
+				},
+			},
+			{
+				label: `作り方動画 CLOSE (${key})`,
+				message: {
+					kind: "methodToVideo",
+					payload: { method: "CLOSE", videoType: key },
+				},
+			},
+			{
+				label: `作り方動画 RESET (${key})`,
+				message: {
+					kind: "methodToVideo",
+					payload: { method: "RESET", videoType: key },
+				},
+			},
+			{
+				label: `作り方動画 RESTART (${key})`,
+				message: {
+					kind: "methodToVideo",
+					payload: { method: "RESTART", videoType: key },
 				},
 			},
 		);
@@ -77,26 +133,26 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 	// videoControll
 	messages.push(
 		{
-			label: "videoControll PLAY",
+			label: "動画コントロール PLAY",
 			message: { kind: "videoControll", payload: { instruction: "PLAY" } },
 		},
 		{
-			label: "videoControll PAUSE",
+			label: "動画コントロール PAUSE",
 			message: { kind: "videoControll", payload: { instruction: "PAUSE" } },
 		},
 		{
-			label: "videoControll REWIND 5s",
+			label: "動画コントロール REWIND 5s",
 			message: {
 				kind: "videoControll",
 				payload: { instruction: "REWIND", time: 5 },
 			},
 		},
 		{
-			label: "videoControll REWIND (default 10s)",
+			label: "動画コントロール REWIND (default 10s)",
 			message: { kind: "videoControll", payload: { instruction: "REWIND" } },
 		},
 		{
-			label: "videoControll FORWARD 15s",
+			label: "動画コントロール FORWARD 15s",
 			message: {
 				kind: "videoControll",
 				payload: { instruction: "FORWARD", time: 15 },
@@ -104,15 +160,22 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 		},
 	);
 
-	// withTalkUser (現在のUIでは副作用なしだが、受信時の安定性確認)
-	messages.push({
-		label: "withTalkUser 'こんにちは'",
-		message: { kind: "withTalkUser", payload: { talkMessage: "こんにちは" } },
-	});
+	messages.push(
+		{
+			label: "ユーザと話す機能 'こんにちは'",
+			message: { kind: "withTalkUser", payload: { talkMessage: "こんにちは" } },
+		},
+		{
+			label: "ユーザと話す機能 '次の手順を教えて'",
+			message: {
+				kind: "withTalkUser",
+				payload: { talkMessage: "次の手順を教えて" },
+			},
+		},
+	);
 
-	// error (現在のUIでは副作用なしだが、受信時の安定性確認)
 	messages.push({
-		label: "error 'サンプルエラー'",
+		label: "エラー 'サンプルエラー'",
 		message: { kind: "error", payload: { message: "サンプルエラー" } },
 	});
 
@@ -138,7 +201,7 @@ export default function TestPage() {
 
 				<section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 					<div className="lg:col-span-2">
-						<RecipeDetailView recipe={recipe} />
+						<RecipeDetailView recipe={recipe} message={selected} />
 					</div>
 
 					<aside className="lg:col-span-1">
@@ -168,11 +231,6 @@ export default function TestPage() {
 								))}
 							</ul>
 						</div>
-
-						{/* 実際の実行結果をこのレベルでレンダリング */}
-						{selected && (
-							<ActionRenderer message={selected} recipeId={recipe.id} />
-						)}
 					</aside>
 				</section>
 
@@ -193,7 +251,9 @@ export default function TestPage() {
 						</li>
 						<li>
 							methodToVideo/timer はそれぞれのダイアログを開閉します。STOP
-							は閉じる判定のみでダイアログは表示されません。
+							は再生/カウントを停止、RESET は先頭に戻して再生、RESTART
+							は一時停止から再開します（ダイアログは閉じません）。CLOSE
+							はダイアログを閉じます。
 						</li>
 					</ul>
 				</section>
