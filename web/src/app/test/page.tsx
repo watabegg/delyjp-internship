@@ -39,16 +39,24 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 	// timer
 	messages.push(
 		{
-			label: "timer START 5s",
+			label: "タイマー 5秒 START",
 			message: { kind: "timer", payload: { method: "START", seconds: 5 } },
 		},
 		{
-			label: "timer START 300s",
+			label: "タイマー 5分 START",
 			message: { kind: "timer", payload: { method: "START", seconds: 300 } },
 		},
 		{
-			label: "timer STOP (5s)",
+			label: "タイマー 5秒 STOP",
 			message: { kind: "timer", payload: { method: "STOP", seconds: 5 } },
+		},
+		{
+			label: "タイマー 5分 RESET",
+			message: { kind: "timer", payload: { method: "RESET", seconds: 300 } },
+		},
+		{
+			label: "タイマー CLOSE",
+			message: { kind: "timer", payload: { method: "CLOSE", seconds: 5 } },
 		},
 	);
 
@@ -57,17 +65,31 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 	cuttingKeys.forEach((key) => {
 		messages.push(
 			{
-				label: `methodToVideo START (${key})`,
+				label: `作り方動画 START (${key})`,
 				message: {
 					kind: "methodToVideo",
 					payload: { method: "START", videoType: key },
 				},
 			},
 			{
-				label: `methodToVideo STOP (${key})`,
+				label: `作り方動画 STOP (${key})`,
 				message: {
 					kind: "methodToVideo",
 					payload: { method: "STOP", videoType: key },
+				},
+			},
+			{
+				label: `作り方動画 CLOSE (${key})`,
+				message: {
+					kind: "methodToVideo",
+					payload: { method: "CLOSE", videoType: key },
+				},
+			},
+			{
+				label: `作り方動画 RESET (${key})`,
+				message: {
+					kind: "methodToVideo",
+					payload: { method: "RESET", videoType: key },
 				},
 			},
 		);
@@ -76,26 +98,26 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 	// videoControll
 	messages.push(
 		{
-			label: "videoControll PLAY",
+			label: "動画コントロール PLAY",
 			message: { kind: "videoControll", payload: { instruction: "PLAY" } },
 		},
 		{
-			label: "videoControll PAUSE",
+			label: "動画コントロール PAUSE",
 			message: { kind: "videoControll", payload: { instruction: "PAUSE" } },
 		},
 		{
-			label: "videoControll REWIND 5s",
+			label: "動画コントロール REWIND 5s",
 			message: {
 				kind: "videoControll",
 				payload: { instruction: "REWIND", time: 5 },
 			},
 		},
 		{
-			label: "videoControll REWIND (default 10s)",
+			label: "動画コントロール REWIND (default 10s)",
 			message: { kind: "videoControll", payload: { instruction: "REWIND" } },
 		},
 		{
-			label: "videoControll FORWARD 15s",
+			label: "動画コントロール FORWARD 15s",
 			message: {
 				kind: "videoControll",
 				payload: { instruction: "FORWARD", time: 15 },
@@ -105,11 +127,11 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 
 	messages.push(
 		{
-			label: "withTalkUser 'こんにちは'",
+			label: "ユーザと話す機能 'こんにちは'",
 			message: { kind: "withTalkUser", payload: { talkMessage: "こんにちは" } },
 		},
 		{
-			label: "withTalkUser '次の手順を教えて'",
+			label: "ユーザと話す機能 '次の手順を教えて'",
 			message: {
 				kind: "withTalkUser",
 				payload: { talkMessage: "次の手順を教えて" },
@@ -117,9 +139,8 @@ function buildAllMessages(): Array<{ label: string; message: ServerMessage }> {
 		},
 	);
 
-	// error (現在のUIでは副作用なしだが、受信時の安定性確認)
 	messages.push({
-		label: "error 'サンプルエラー'",
+		label: "エラー 'サンプルエラー'",
 		message: { kind: "error", payload: { message: "サンプルエラー" } },
 	});
 
