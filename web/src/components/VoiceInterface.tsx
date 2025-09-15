@@ -7,6 +7,7 @@ import type { TranscriptionResult, VoiceStatus } from "@/types/realtime";
 interface VoiceInterfaceProps {
 	onStatusChange?: (status: VoiceStatus) => void;
 	onTranscript?: (result: TranscriptionResult) => void;
+	onResult?: (result: string) => void;
 	onError?: (error: string) => void;
 }
 
