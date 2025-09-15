@@ -41,12 +41,11 @@ export type CuttingMethodKey = keyof typeof methodToVideoUrl;
 
 export type ControllerInstruction = "PLAY" | "PAUSE" | "REWIND" | "FORWARD";
 
-export type ActionMethod = "START" | "STOP" | "CLOSE";
+export type ActionMethod = "START" | "STOP" | "RESET" | "CLOSE";
 
-// サーバーから期待するメッセージの型定義をマップで一元管理
 export type PayloadMap = {
 	timer: { method: ActionMethod; seconds: number };
-	methodToVideo: { method: ActionMethod; videoType: CuttingMethodKey }; // 必要なら videoType を 'howto' | 'tip' などに制限
+	methodToVideo: { method: ActionMethod; videoType: CuttingMethodKey };
 	videoControll: { instruction: ControllerInstruction; time?: number };
 	withTalkUser: { talkMessage: string };
 	error: { message: string };
@@ -54,7 +53,6 @@ export type PayloadMap = {
 
 export type ServerMessageKind = keyof PayloadMap;
 
-// K を指定するとその kind のメッセージだけに絞れる
 export type ServerMessage<K extends ServerMessageKind = ServerMessageKind> = {
 	kind: K;
 	payload: PayloadMap[K];
