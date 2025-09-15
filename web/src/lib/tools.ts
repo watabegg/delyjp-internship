@@ -9,58 +9,119 @@ export function createRecipeSearchTool() {
   return new DynamicStructuredTool({
     name: "recipe_search",
     description:
-      "レシピを検索して詳細な情報を取得する。料理名や食材名で検索できます。",
+      "ユーザーが指定したレシピIDでレシピの詳細情報を取得する。材料、手順、コツなどの完全な情報を提供します。",
     schema: z.object({
-      query: z.string().describe("検索する料理名や食材名"),
+      recipe_id: z.string().describe("ユーザーが指定したレシピのID"),
     }),
-    func: async ({ query }) => {
-      console.log(`🍳 [Tool] レシピ検索実行: ${query}`);
+    func: async ({ recipe_id }) => {
+      console.log(`🍳 [Tool] レシピ詳細取得: ${recipe_id}`);
 
-      // 実際のDB検索やAPI呼び出し
-      const mockRecipes = [
-        {
-          id: 1,
-          title: `基本の${query}`,
-          ingredients: [
-            { name: "主材料A", amount: "300g" },
-            { name: "主材料B", amount: "2個" },
-            { name: "調味料C", amount: "大さじ2" },
-            { name: "調味料D", amount: "適量" },
-          ],
-          steps: [
-            "材料の準備と下ごしらえを行う",
-            "主材料Aを中火で炒める（5分程度）",
-            "主材料Bを加えてさらに炒める",
-            "調味料Cと調味料Dで味付けをする",
-            "蓋をして弱火で15分煮込んで完成",
-          ],
-          tips: "材料Aはしっかり炒めることで旨味が増します。",
-          cookingTime: "約30分",
-          difficulty: "初級",
-        },
-      ];
+      try {
+        // Rails API からレシピ詳細を取得
+        const response = await fetch(
+          `http://localhost:3001/recipes/${recipe_id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-      return `レシピ検索結果:
-クエリ: ${query}
-見つかったレシピ: ${mockRecipes.length}件
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status}`);
+        }
 
-${mockRecipes
-  .map(
-    (recipe, index) => `
-レシピ${index + 1}: ${recipe.title}
-調理時間: ${recipe.cookingTime}
-難易度: ${recipe.difficulty}
+        const recipe = await response.json();
+        const attrs = recipe.attributes || recipe;
 
-材料:
-${recipe.ingredients.map((ing) => `- ${ing.name}: ${ing.amount}`).join("\n")}
+        if (!recipe) {
+          return `レシピが見つかりませんでした。
+ID: ${recipe_id}
 
-手順:
-${recipe.steps.map((step, i) => `${i + 1}. ${step}`).join("\n")}
+指定されたレシピが存在しないか、アクセスできません。`;
+        }
 
-コツ: ${recipe.tips}
-`
-  )
-  .join("\n")}`;
+        // レシピ詳細情報を整形
+        const formattedResult = `🍳 ${attrs.title}
+
+📊 基本情報:
+⏱️ 調理時間: ${attrs.cooking_time}分
+💰 推定費用: ${attrs.estimated_cost}円
+⭐ 評価: ${attrs.review_score ? `${attrs.review_score}/5.0` : "未評価"}
+🏷️ カテゴリ: ${
+          Array.isArray(attrs.category)
+            ? attrs.category.join(", ")
+            : attrs.category
+        }
+
+📝 説明:
+${attrs.description || "レシピの詳細説明"}
+
+🥄 材料:
+${
+  attrs.ingredients && Array.isArray(attrs.ingredients)
+    ? attrs.ingredients
+        .map((ing: any) => `• ${ing.name || ing}: ${ing.amount || ""}`)
+        .join("\n")
+    : "材料リストが利用できません"
+}
+
+👨‍🍳 作り方:
+${
+  attrs.instructions && Array.isArray(attrs.instructions)
+    ? attrs.instructions
+        .map((step: any, i: number) => `${i + 1}. ${step.description || step}`)
+        .join("\n")
+    : "調理手順が利用できません"
+}
+
+💡 コツ・ポイント:
+${
+  attrs.tips && Array.isArray(attrs.tips)
+    ? attrs.tips.map((tip: string) => `• ${tip}`).join("\n")
+    : attrs.tips || "美味しく作るためのコツをお聞かせください！"
+}
+
+${
+  attrs.comment && Array.isArray(attrs.comment) && attrs.comment.length > 0
+    ? `\n💬 コメント:\n${attrs.comment
+        .map((comment: string) => `• ${comment}`)
+        .join("\n")}`
+    : ""
+}
+
+${
+  attrs.taberepos &&
+  Array.isArray(attrs.taberepos) &&
+  attrs.taberepos.length > 0
+    ? `\n🍽️ 食べレポ:\n${attrs.taberepos
+        .slice(0, 3)
+        .map((repo: string) => `• ${repo}`)
+        .join("\n")}`
+    : ""
+}`;
+
+        console.log("\n📋 [Tool] ===== レシピツールの生レスポンス =====");
+        console.log("🍳 取得レシピID:", recipe_id);
+        console.log("📄 レスポンス内容:");
+        console.log("─".repeat(60));
+        console.log(formattedResult);
+        console.log("─".repeat(60));
+        console.log(`📊 データサイズ: ${formattedResult.length} 文字`);
+        console.log("✅ [Tool] ===== レシピツール完了 =====\n");
+
+        return formattedResult;
+      } catch (error) {
+        console.error("🚨 [Tool] レシピ取得エラー:", error);
+
+        // エラー時はフォールバック
+        return `レシピ取得エラー:
+ID: ${recipe_id}
+
+申し訳ありません。現在レシピデータベースにアクセスできません。
+少し時間をおいてから再度お試しください。`;
+      }
     },
   });
 }
@@ -142,7 +203,7 @@ export function createTimerControlTool() {
       "料理タイマーを操作する。分や秒を指定してタイマーを開始できます。",
     schema: z.object({
       method: z
-        .enum(["START", "STOP", "RESET", "CLOSE"])
+        .enum(["START", "STOP", "RESET", "RESTART", "CLOSE"])
         .describe("タイマーの操作"),
       minutes: z.number().optional().describe("タイマーの分数"),
       seconds: z.number().optional().describe("タイマーの秒数"),

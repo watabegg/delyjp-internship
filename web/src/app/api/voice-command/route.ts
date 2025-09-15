@@ -6,12 +6,14 @@ export async function POST(req: NextRequest) {
   try {
     console.log("🔥 [API] 音声コマンド受信");
 
+    const { searchParams } = new URL(req.url);
+    const recipeId = searchParams.get("recipe_id");
     const { speechText } = await req.json();
 
     if (!speechText || typeof speechText !== "string") {
       return NextResponse.json(
         {
-          type: "generate_text_response",
+          kind: "error",
           payload: {
             message: "音声テキストが必要です。",
           },
@@ -21,10 +23,12 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`🎤 [API] 音声テキスト: "${speechText}"`);
+    console.log(`🆔 [API] 現在のレシピID: ${recipeId || "未指定"}`);
 
-    // Geminiエージェントで3パターンを処理
+    // Geminiエージェントで3パターンを処理（レシピIDを渡す）
     const agentResult = await GeminiAIService.processWithLangChainAgent(
-      speechText
+      speechText,
+      recipeId
     );
 
     console.log(`🎯 [API] パターン${agentResult.pattern}で処理完了`);
@@ -36,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       {
-        type: "generate_text_response",
+        kind: "error",
         payload: {
           message: "申し訳ありません。エラーが発生しました。",
         },

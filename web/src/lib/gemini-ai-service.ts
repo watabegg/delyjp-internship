@@ -14,16 +14,16 @@ export class GeminiAIService {
     {
       name: "recipe_search",
       description:
-        "レシピを検索して詳細な情報を取得する。料理名や食材名で検索できます。",
+        "リクエストに指定された現在見ているレシピIDでレシピの詳細情報を取得する。材料、手順、コツなどの完全な情報を提供します。",
       parameters: {
         type: SchemaType.OBJECT,
         properties: {
-          query: {
+          recipe_id: {
             type: SchemaType.STRING,
-            description: "検索する料理名や食材名",
+            description: "リクエストに指定されたレシピのID（UUID形式）",
           },
         },
-        required: ["query"],
+        required: ["recipe_id"],
       },
     },
     {
@@ -87,7 +87,7 @@ export class GeminiAIService {
           method: {
             type: SchemaType.STRING,
             format: "enum" as const,
-            enum: ["START", "STOP", "RESET", "CLOSE"] as const,
+            enum: ["START", "STOP", "RESET", "RESTART", "CLOSE"] as const,
             description: "タイマーの操作",
           },
           minutes: {
@@ -121,8 +121,12 @@ export class GeminiAIService {
   }
 
   // 本物のGemini Function Callingで3パターンを処理
-  static async processWithLangChainAgent(transcript: string) {
+  static async processWithLangChainAgent(
+    transcript: string,
+    recipeId?: string | null
+  ) {
     console.log("🤖 [AI] Gemini Function Calling処理開始");
+    console.log(`🆔 [AI] 受信レシピID: ${recipeId || "未指定"}`);
 
     try {
       const genAI = this.initializeGemini();
@@ -145,8 +149,10 @@ export class GeminiAIService {
 - 会話は簡潔でテンポよく、親近感のある口調
 
 # 利用可能なツール
-1. **recipe_search**: レシピを検索
-   - 「〇〇のレシピ」「〇〇の作り方」で使用
+1. **recipe_search**: 現在のレシピ詳細取得
+   - ユーザーが現在見ているレシピの詳細情報を取得
+   - 材料、手順、コツ、食べレポなどの完全な情報を提供
+   - レシピIDは自動的に設定されるため指定不要
    - 結果は親しみやすく、要点を絞って説明
 
 2. **method_video**: 切り方動画を表示
@@ -230,7 +236,8 @@ export class GeminiAIService {
           // ツールを実行し、その結果をそのまま返す
           const toolResult = await this.executeFunction(
             functionName,
-            functionArgs
+            functionArgs,
+            recipeId
           );
 
           let parsedOutput;
@@ -254,8 +261,19 @@ export class GeminiAIService {
           // ツール実行
           const toolResult = await this.executeFunction(
             functionName,
-            functionArgs
+            functionArgs,
+            recipeId
           );
+
+          console.log("\n" + "🔄 [AI] ツール結果をGeminiに送信:");
+          console.log("=".repeat(80));
+          console.log(`📌 Tool名: ${functionName}`);
+          console.log(`📌 引数: ${JSON.stringify(functionArgs, null, 2)}`);
+          console.log("=".repeat(25) + " TOOL RESPONSE " + "=".repeat(25));
+          console.log(toolResult);
+          console.log("=".repeat(80));
+          console.log(`📊 ツールレスポンス文字数: ${toolResult.length} 文字`);
+          console.log("=".repeat(80) + "\n");
 
           // ツール結果をGeminiに送信してAI回答生成
           const followUpResult = await chat.sendMessage([
@@ -268,6 +286,15 @@ export class GeminiAIService {
           ]);
 
           const aiResponse = followUpResult.response.text();
+
+          console.log("\n" + "🤖 [AI] Geminiが生成した最終回答:");
+          console.log("=".repeat(80));
+          console.log("📝 AI回答内容:");
+          console.log("-".repeat(40));
+          console.log(aiResponse);
+          console.log("-".repeat(40));
+          console.log(`📊 AI回答文字数: ${aiResponse.length} 文字`);
+          console.log("=".repeat(80) + "\n");
 
           return {
             pattern: 2,
@@ -313,13 +340,29 @@ export class GeminiAIService {
   }
 
   // Function実行
-  private static async executeFunction(functionName: string, args: any) {
-    console.log(`🔧 [AI] Function実行: ${functionName}`, args);
+  private static async executeFunction(
+    functionName: string,
+    args: any,
+    recipeId?: string | null
+  ) {
+    console.log("\n" + "🔧 [AI] Function実行開始:");
+    console.log("=".repeat(60));
+    console.log(`📌 Function名: ${functionName}`);
+    console.log(`📌 引数: ${JSON.stringify(args, null, 2)}`);
+    console.log(`📌 レシピID: ${recipeId || "未指定"}`);
+    console.log("=".repeat(60));
 
     switch (functionName) {
       case "recipe_search":
+        // レシピIDが渡されている場合はそれを使用、なければargsから取得
+        const targetRecipeId = recipeId || args.recipe_id;
+        if (!targetRecipeId) {
+          return "エラー: レシピIDが指定されていません。現在見ているレシピのIDが必要です。";
+        }
+
+        console.log(`🍳 [AI] レシピ取得対象ID: ${targetRecipeId}`);
         const recipeSearchTool = createRecipeSearchTool();
-        return await recipeSearchTool.func(args);
+        return await recipeSearchTool.func({ recipe_id: targetRecipeId });
 
       case "method_video":
         return JSON.stringify({
