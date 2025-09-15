@@ -151,15 +151,12 @@ export default function VoiceInterface({
 
 	const handleMicClick = () => {
 		if (status === "disconnected") {
-			addDebugLog("接続開始...", "info");
 			setShouldAutoStart(true);
 			connect();
 			return;
 		}
 
 		if (status === "connecting") {
-			// 接続待ち。接続完了時に自動で録音開始
-			addDebugLog("接続完了後に録音開始予定", "info");
 			setShouldAutoStart(true);
 			return;
 		}
@@ -171,7 +168,6 @@ export default function VoiceInterface({
 			status === "speaking"
 		) {
 			// 再クリックで完全停止・切断
-			addDebugLog("録音停止・完全切断", "info");
 			stopRecording();
 			disconnect();
 			return;
@@ -179,7 +175,6 @@ export default function VoiceInterface({
 
 		// 接続済み（待機中）なら録音開始
 		if (status === "connected") {
-			addDebugLog("録音開始", "success");
 			startRecording();
 		}
 	};
@@ -191,7 +186,7 @@ export default function VoiceInterface({
 				onClick={handleMicClick}
 				aria-label="音声アシスタント"
 				className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 ${ringClass} ${bgClass} 
-					text-white w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition active:scale-95 focus:outline-none`}
+				text-white w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition active:scale-95 focus:outline-none`}
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -214,117 +209,6 @@ export default function VoiceInterface({
 					{status === "error" && "マイク（エラー）"}
 				</span>
 			</button>
-			{/* デバッグパネル */}
-			<div className="fixed top-4 right-4 w-96 max-h-96 bg-black/90 text-white p-4 rounded-lg text-xs font-mono overflow-hidden">
-				{/* ステータス表示 */}
-				<div className="mb-3 p-2 bg-gray-800 rounded">
-					<div className="flex items-center gap-2 mb-1">
-						<div
-							className={`w-3 h-3 rounded-full ${
-								status === "connected"
-									? "bg-green-400"
-									: status === "error"
-										? "bg-red-400"
-										: status === "connecting"
-											? "bg-yellow-400 animate-pulse"
-											: status === "listening"
-												? "bg-blue-400 animate-pulse"
-												: status === "processing"
-													? "bg-orange-400 animate-pulse"
-													: "bg-gray-400"
-							}`}
-						></div>
-						<span className="font-bold">ステータス: {status}</span>
-					</div>
-					{isRecording && <div className="text-red-400">🔴 録音中</div>}
-					{error && <div className="text-red-400 mt-1">❌ {error}</div>}
-				</div>
-
-				{/* 転写履歴 */}
-				<div className="mb-3">
-					<div className="text-green-400 font-bold mb-1">📝 転写履歴:</div>
-					<div className="bg-gray-800 rounded p-2 max-h-24 overflow-y-auto">
-						{transcriptHistory.length === 0 ? (
-							<div className="text-gray-500">まだ転写結果がありません</div>
-						) : (
-							transcriptHistory.map((item, index) => (
-								<div key={index} className="mb-1">
-									<span className="text-gray-400">[{item.timestamp}]</span>
-									<span className="ml-2 text-white">{item.text}</span>
-								</div>
-							))
-						)}
-					</div>
-				</div>
-
-				{/* デバッグログ */}
-				<div>
-					<div className="text-blue-400 font-bold mb-1">🔧 デバッグログ:</div>
-					<div className="bg-gray-800 rounded p-2 max-h-32 overflow-y-auto">
-						{debugLogs.map((log, index) => (
-							<div
-								key={index}
-								className={`mb-1 ${
-									log.type === "error"
-										? "text-red-400"
-										: log.type === "success"
-											? "text-green-400"
-											: "text-gray-300"
-								}`}
-							>
-								<span className="text-gray-500">[{log.timestamp}]</span>
-								<span className="ml-2">{log.message}</span>
-							</div>
-						))}
-						{debugLogs.length === 0 && (
-							<div className="text-gray-500">ログがありません</div>
-						)}
-					</div>
-				</div>
-
-				{/* メッセージタイプ履歴 */}
-				<div className="mt-3">
-					<div className="text-purple-400 font-bold mb-1">
-						📡 受信メッセージ:
-					</div>
-					<div className="bg-gray-800 rounded p-2 max-h-24 overflow-y-auto">
-						{recentMessages.map((msg, index) => (
-							<div key={index} className="mb-1 text-xs">
-								<span className="text-gray-500">[{msg.timestamp}]</span>
-								<span className="ml-2 text-purple-300">{msg.type}</span>
-							</div>
-						))}
-						{recentMessages.length === 0 && (
-							<div className="text-gray-500">メッセージなし</div>
-						)}
-					</div>
-				</div>
-
-				{/* クリアボタン */}
-				<div className="mt-3 flex gap-2">
-					<button
-						type="button"
-						onClick={() => setTranscriptHistory([])}
-						className="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs"
-					>
-						転写クリア
-					</button>
-					<button
-						type="button"
-						onClick={() => setDebugLogs([])}
-						className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs"
-					>
-						ログクリア
-					</button>
-					<button
-						type="button"
-						onClick={() => setRecentMessages([])}
-						className="px-2 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs"
-					>
-						メッセージクリア
-					</button>
-				</div>
-			</div>
 		</>
 	);
 }
