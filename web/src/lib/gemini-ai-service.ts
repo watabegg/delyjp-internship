@@ -23,38 +23,51 @@ export class GeminiAIService {
       },
     },
     {
-      name: "video_search",
+      name: "method_video",
       description:
-        "料理動画を検索する。料理名や調理法で動画を見つけることができます。",
+        "特定の調理法（切り方など）の動画を制御する。rectangles（短冊切り）、shavingCut（そぎ切り）、chop（ぶつ切り）、wedges（くし形切り）、mince（みじん切り）、dice（角切り）、shred（千切り）など",
       parameters: {
         type: "object",
         properties: {
-          query: {
+          method: {
             type: "string",
-            description: "検索する動画のキーワード（料理名など）",
+            enum: ["START", "STOP", "CLOSE", "RESET"],
+            description: "動画の操作（開始、停止、閉じる、リセット）",
+          },
+          videoType: {
+            type: "string",
+            enum: [
+              "rectangles",
+              "shavingCut",
+              "chop",
+              "wedges",
+              "mince",
+              "dice",
+              "shred",
+            ],
+            description: "調理法の種類",
           },
         },
-        required: ["query"],
+        required: ["method", "videoType"],
       },
     },
     {
       name: "video_control",
-      description:
-        "動画の再生制御を行う。再生、停止、早送り、巻き戻しなどができます。",
+      description: "動画の再生制御を行う。再生、一時停止、早送り、巻き戻しなど",
       parameters: {
         type: "object",
         properties: {
-          action: {
+          instruction: {
             type: "string",
-            enum: ["play", "pause", "seek_forward", "seek_backward", "restart"],
-            description: "実行するアクション",
+            enum: ["PLAY", "PAUSE", "REWIND", "FORWARD"],
+            description: "実行する操作",
           },
-          seconds: {
+          time: {
             type: "number",
-            description: "早送り/巻き戻しの秒数（省略可、デフォルト10秒）",
+            description: "早送り/巻き戻しの秒数（省略可）",
           },
         },
-        required: ["action"],
+        required: ["instruction"],
       },
     },
     {
@@ -64,10 +77,10 @@ export class GeminiAIService {
       parameters: {
         type: "object",
         properties: {
-          action: {
+          method: {
             type: "string",
-            enum: ["start", "stop", "pause", "reset"],
-            description: "タイマーのアクション",
+            enum: ["START", "STOP", "RESET", "CLOSE"],
+            description: "タイマーの操作",
           },
           minutes: {
             type: "number",
@@ -78,7 +91,7 @@ export class GeminiAIService {
             description: "タイマーの秒数",
           },
         },
-        required: ["action"],
+        required: ["method"],
       },
     },
   ];
@@ -114,16 +127,55 @@ export class GeminiAIService {
 
       // システムプロンプト
       const systemPrompt = `
-あなたは料理アプリ「クラシル」のAIアシスタントです。
-ユーザーの要求に応じて適切なツール（関数）を使用してください。
+あなたは料理アプリ「クラシル」のフレンドリーな料理パートナーです。
+一緒に料理を楽しく作る仲間として、親しみやすく会話してください。
 
-利用可能なツール:
-- recipe_search: レシピを検索して詳細な情報を取得
-- video_search: 動画を検索  
-- video_control: 動画の再生制御
-- timer_control: タイマーの操作
+# あなたの性格
+- 明るくて親しみやすい料理好きの友達
+- ユーザーと一緒に料理を楽しむパートナー
+- 失敗も含めて料理の楽しさを共有
+- 会話は簡潔でテンポよく、親近感のある口調
 
-ツールを使用しない場合は、料理に関する知識で直接回答してください。
+# 利用可能なツール
+1. **recipe_search**: レシピを検索
+   - 「〇〇のレシピ」「〇〇の作り方」で使用
+   - 結果は親しみやすく、要点を絞って説明
+
+2. **method_video**: 切り方動画を表示
+   - みじん切り(mince)、角切り(dice)、千切り(shred)など
+   - 「〇〇切りを見せて」で使用
+
+3. **video_control**: 動画の操作
+   - 再生、一時停止、巻き戻し、早送り
+   - 「動画を止めて」「もう一度見せて」で使用
+
+4. **timer_control**: タイマー操作
+   - 開始、停止、リセット
+   - 「〇分タイマーセット」で使用
+
+# 回答スタイル
+## 会話のコツ：
+- 「一緒に作りましょう！」の気持ちで
+- 長すぎず、聞きやすい長さで
+- 「〜ですね」「〜しましょう」など親しみやすい口調
+- 料理の楽しさや美味しさを表現
+
+## レシピ説明では：
+- 手順は3-5ステップに要約
+- 「ここがポイント！」など感情を込めて
+- 「きっと美味しくできますよ♪」など励ましも
+
+## 一般質問では：
+- 簡潔で実用的なアドバイス
+- 失敗談も交えて親近感を演出
+- 「こうするともっと美味しくなりますよ」
+
+## 注意点：
+- 食材の安全性は必ず伝える
+- でも堅苦しくならないように
+- 楽しく安全に料理できるサポート
+
+一緒に美味しい料理を作る料理仲間として、楽しく会話してください！
 `;
 
       // Geminiにリクエスト送信
@@ -137,7 +189,7 @@ export class GeminiAIService {
             role: "model",
             parts: [
               {
-                text: "はい、料理アプリ「クラシル」のAIアシスタントとして、ユーザーの要求に応じて適切なツールを使用してサポートします。",
+                text: "こんにちは！クラシルの料理パートナーです♪一緒に美味しい料理を作りましょう！レシピを探したり、切り方の動画を見たり、タイマーをセットしたり、何でもお手伝いしますよ。今日は何を作りますか？",
               },
             ],
           },
@@ -167,12 +219,28 @@ export class GeminiAIService {
           // パターン1: コマンド型ツール → Function Callの結果をそのまま返す
           console.log("🎯 [AI] パターン1: コマンド実行");
 
+          // ツールを実行し、その結果をそのまま返す
+          const toolResult = await this.executeFunction(
+            functionName,
+            functionArgs
+          );
+
+          let parsedOutput;
+          try {
+            parsedOutput = JSON.parse(toolResult);
+          } catch {
+            parsedOutput = {
+              label: "エラー",
+              message: {
+                kind: "error",
+                payload: { message: toolResult },
+              },
+            };
+          }
+
           return {
             pattern: 1,
-            response: {
-              type: functionName,
-              payload: functionArgs,
-            },
+            response: parsedOutput,
           };
         } else {
           // パターン2: 情報取得型ツール → ツール実行してAIが回答生成
@@ -199,8 +267,11 @@ export class GeminiAIService {
           return {
             pattern: 2,
             response: {
-              type: "generate_text_response",
-              payload: { message: aiResponse },
+              label: "レシピ情報",
+              message: {
+                kind: "withTalkUser",
+                payload: { talkMessage: aiResponse },
+              },
             },
           };
         }
@@ -213,8 +284,11 @@ export class GeminiAIService {
         return {
           pattern: 3,
           response: {
-            type: "generate_text_response",
-            payload: { message: aiResponse },
+            label: "AI回答",
+            message: {
+              kind: "withTalkUser",
+              payload: { talkMessage: aiResponse },
+            },
           },
         };
       }
@@ -223,9 +297,12 @@ export class GeminiAIService {
       return {
         pattern: 3,
         response: {
-          type: "generate_text_response",
-          payload: {
-            message: "申し訳ありません。処理中にエラーが発生しました。",
+          label: "エラー",
+          message: {
+            kind: "error",
+            payload: {
+              message: "申し訳ありません。処理中にエラーが発生しました。",
+            },
           },
         },
       };
@@ -234,7 +311,7 @@ export class GeminiAIService {
 
   // コマンド型ツールかどうか判定
   private static isCommandTool(functionName: string): boolean {
-    return ["video_search", "video_control", "timer_control"].includes(
+    return ["method_video", "video_control", "timer_control"].includes(
       functionName
     );
   }
@@ -248,23 +325,65 @@ export class GeminiAIService {
         const recipeSearchTool = createRecipeSearchTool();
         return await recipeSearchTool.func(args);
 
-      case "video_search":
+      case "method_video":
         return JSON.stringify({
-          type: "video_search",
-          payload: args,
+          label: `作り方動画 ${args.method} (${args.videoType})`,
+          message: {
+            kind: "methodToVideo",
+            payload: {
+              method: args.method,
+              videoType: args.videoType,
+            },
+          },
         });
 
       case "video_control":
+        // Geminiが動的に抽出した秒数を使用（REWINDやFORWARDの場合）
+        const payload: any = { instruction: args.instruction };
+        if (args.time !== undefined) {
+          payload.time = args.time;
+        }
+
+        // ラベル作成
+        let label = `動画コントロール ${args.instruction}`;
+        if (args.time !== undefined) {
+          label += ` ${args.time}s`;
+        }
+
         return JSON.stringify({
-          type: "video_control",
-          payload: { ...args, seconds: args.seconds || 10 },
+          label: label,
+          message: {
+            kind: "videoControll",
+            payload: payload,
+          },
         });
 
       case "timer_control":
+        // Geminiが動的に抽出した時間を秒に変換
         const totalSeconds = (args.minutes || 0) * 60 + (args.seconds || 0);
+        const timerSeconds = totalSeconds > 0 ? totalSeconds : 300; // デフォルト5分
+
+        // ラベル作成
+        const minutes = Math.floor(timerSeconds / 60);
+        const seconds = timerSeconds % 60;
+        let timerLabel = `タイマー `;
+        if (minutes > 0) {
+          timerLabel += `${minutes}分`;
+        }
+        if (seconds > 0) {
+          timerLabel += `${seconds}秒`;
+        }
+        timerLabel += ` ${args.method}`;
+
         return JSON.stringify({
-          type: "timer_control",
-          payload: { action: args.action, seconds: totalSeconds || 300 },
+          label: timerLabel,
+          message: {
+            kind: "timer",
+            payload: {
+              method: args.method,
+              seconds: timerSeconds,
+            },
+          },
         });
 
       default:

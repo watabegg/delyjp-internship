@@ -66,23 +66,39 @@ ${recipe.steps.map((step, i) => `${i + 1}. ${step}`).join("\n")}
 }
 
 /**
- * 動画検索ツール（パターン1: コマンド型）
- * フロントエンド向けのJSON指示をそのまま返す
+ * 調理法動画ツール（パターン1: コマンド型）
+ * 特定の調理法（切り方など）の動画を制御
  */
-export function createVideoSearchTool() {
+export function createMethodVideoTool() {
   return new DynamicStructuredTool({
-    name: "video_search",
+    name: "method_video",
     description:
-      "料理動画を検索する。料理名や調理法で動画を見つけることができます。",
+      "特定の調理法（切り方など）の動画を制御する。rectangles（短冊切り）、shavingCut（そぎ切り）、chop（ぶつ切り）、wedges（くし形切り）、mince（みじん切り）、dice（角切り）、shred（千切り）など",
     schema: z.object({
-      query: z.string().describe("検索する動画のキーワード（料理名など）"),
+      method: z
+        .enum(["START", "STOP", "CLOSE", "RESET"])
+        .describe("動画の操作（開始、停止、閉じる、リセット）"),
+      videoType: z
+        .enum([
+          "rectangles",
+          "shavingCut",
+          "chop",
+          "wedges",
+          "mince",
+          "dice",
+          "shred",
+        ])
+        .describe("調理法の種類"),
     }),
-    func: async ({ query }) => {
-      console.log(`🎬 [Tool] 動画検索実行: ${query}`);
+    func: async ({ method, videoType }) => {
+      console.log(`🎬 [Tool] 調理法動画実行: ${method}, ${videoType}`);
 
       return JSON.stringify({
-        type: "video_search",
-        payload: { query },
+        label: `作り方動画 ${method} (${videoType})`,
+        message: {
+          kind: "methodToVideo",
+          payload: { method, videoType },
+        },
       });
     },
   });
@@ -90,28 +106,38 @@ export function createVideoSearchTool() {
 
 /**
  * 動画操作ツール（パターン1: コマンド型）
- * フロントエンド向けのJSON指示をそのまま返す
+ * 動画の再生制御を行う
  */
 export function createVideoControlTool() {
   return new DynamicStructuredTool({
     name: "video_control",
-    description:
-      "動画の再生制御を行う。再生、停止、早送り、巻き戻しなどができます。",
+    description: "動画の再生制御を行う。再生、一時停止、早送り、巻き戻しなど",
     schema: z.object({
-      action: z
-        .enum(["play", "pause", "seek_forward", "seek_backward", "restart"])
-        .describe("実行するアクション"),
-      seconds: z
-        .number()
-        .optional()
-        .describe("早送り/巻き戻しの秒数（省略可）"),
+      instruction: z
+        .enum(["PLAY", "PAUSE", "REWIND", "FORWARD"])
+        .describe("実行する操作"),
+      time: z.number().optional().describe("早送り/巻き戻しの秒数（省略可）"),
     }),
-    func: async ({ action, seconds }) => {
-      console.log(`🎮 [Tool] 動画操作実行: ${action}, ${seconds}秒`);
+    func: async ({ instruction, time }) => {
+      console.log(`🎮 [Tool] 動画操作実行: ${instruction}, ${time}秒`);
+
+      const payload: any = { instruction };
+      if (time !== undefined) {
+        payload.time = time;
+      }
+
+      // ラベル作成
+      let label = `動画コントロール ${instruction}`;
+      if (time !== undefined) {
+        label += ` ${time}s`;
+      }
 
       return JSON.stringify({
-        type: "video_control",
-        payload: { action, seconds: seconds || 10 },
+        label: label,
+        message: {
+          kind: "videoControll",
+          payload: payload,
+        },
       });
     },
   });
@@ -119,7 +145,7 @@ export function createVideoControlTool() {
 
 /**
  * タイマー操作ツール（パターン1: コマンド型）
- * フロントエンド向けのJSON指示をそのまま返す
+ * 料理タイマーを操作する
  */
 export function createTimerControlTool() {
   return new DynamicStructuredTool({
@@ -127,22 +153,38 @@ export function createTimerControlTool() {
     description:
       "料理タイマーを操作する。分や秒を指定してタイマーを開始できます。",
     schema: z.object({
-      action: z
-        .enum(["start", "stop", "pause", "reset"])
-        .describe("タイマーのアクション"),
+      method: z
+        .enum(["START", "STOP", "RESET", "CLOSE"])
+        .describe("タイマーの操作"),
       minutes: z.number().optional().describe("タイマーの分数"),
       seconds: z.number().optional().describe("タイマーの秒数"),
     }),
-    func: async ({ action, minutes, seconds }) => {
+    func: async ({ method, minutes, seconds }) => {
       console.log(
-        `⏱️ [Tool] タイマー操作実行: ${action}, ${minutes}分${seconds}秒`
+        `⏱️ [Tool] タイマー操作実行: ${method}, ${minutes}分${seconds}秒`
       );
 
       const totalSeconds = (minutes || 0) * 60 + (seconds || 0);
+      const timerSeconds = totalSeconds > 0 ? totalSeconds : 300; // デフォルト5分
+
+      // ラベル作成
+      const mins = Math.floor(timerSeconds / 60);
+      const secs = timerSeconds % 60;
+      let timerLabel = `タイマー `;
+      if (mins > 0) {
+        timerLabel += `${mins}分`;
+      }
+      if (secs > 0) {
+        timerLabel += `${secs}秒`;
+      }
+      timerLabel += ` ${method}`;
 
       return JSON.stringify({
-        type: "timer_control",
-        payload: { action, seconds: totalSeconds },
+        label: timerLabel,
+        message: {
+          kind: "timer",
+          payload: { method, seconds: timerSeconds },
+        },
       });
     },
   });
@@ -152,5 +194,5 @@ export function createTimerControlTool() {
  * コマンド型ツールかどうか判定
  */
 export function isCommandTool(toolName: string): boolean {
-  return ["video_search", "video_control", "timer_control"].includes(toolName);
+  return ["method_video", "video_control", "timer_control"].includes(toolName);
 }
