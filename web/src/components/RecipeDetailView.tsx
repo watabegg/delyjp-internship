@@ -35,7 +35,7 @@ export function RecipeDetailView({
 								<VideoController
 									recipeId={recipe.id}
 									videoSrc={attributes.video_url}
-									className="w-full h-full"
+									className="w-full h-full aspect-video"
 								/>
 							) : attributes.thumbnail_url ? (
 								<Image
