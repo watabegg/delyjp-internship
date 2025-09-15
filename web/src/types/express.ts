@@ -41,7 +41,7 @@ export type CuttingMethodKey = keyof typeof methodToVideoUrl;
 
 export type ControllerInstruction = "PLAY" | "PAUSE" | "REWIND" | "FORWARD";
 
-export type ActionMethod = "START" | "STOP";
+export type ActionMethod = "START" | "STOP" | "CLOSE";
 
 // サーバーから期待するメッセージの型定義をマップで一元管理
 export type PayloadMap = {

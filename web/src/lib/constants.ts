@@ -17,4 +17,7 @@ export const LOCAL_API = {
 	videos: {
 		control: "/api/video-controller",
 	},
+	tts: {
+		speak: "/api/tts",
+	},
 } as const;

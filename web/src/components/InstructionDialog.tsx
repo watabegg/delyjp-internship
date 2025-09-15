@@ -38,7 +38,12 @@ const InstructionDialog = ({
 			className="w-full max-w-3xl"
 		>
 			{url ? (
-				<video controls className="w-full h-full max-h-[80vh]" src={url}>
+				<video
+					controls
+					autoPlay
+					className="w-full h-full max-h-[80vh]"
+					src={url}
+				>
 					<track
 						kind="captions"
 						srcLang="ja"
