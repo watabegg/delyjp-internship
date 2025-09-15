@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
 	images: {
+		domains: ["video.kurashiru.com"],
 		remotePatterns: [
 			{
 				protocol: "http",
@@ -20,9 +21,6 @@ const nextConfig: NextConfig = {
 				pathname: "/**",
 			},
 		],
-	},
-	env: {
-		OPENAI_API_KEY: process.env.OPENAI_API_KEY,
 	},
 };
 
