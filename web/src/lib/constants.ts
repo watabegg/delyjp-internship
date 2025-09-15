@@ -1,6 +1,5 @@
-export const API_BASE = "http://localhost:3001"; // Rails origin
+export const API_BASE = "http://localhost:3001";
 
-// Upstream (Rails) paths
 export const API_ROUTES = {
 	recipes: {
 		list: "/recipes",
@@ -8,7 +7,6 @@ export const API_ROUTES = {
 	},
 } as const;
 
-// Next.js local API proxy paths
 export const LOCAL_API = {
 	recipes: {
 		list: "/api/recipes",
@@ -18,6 +16,7 @@ export const LOCAL_API = {
 		control: "/api/video-controller",
 	},
 	tts: {
-		speak: "/api/tts",
+		events: "/api/tts-events",
+		broadcast: "/api/tts-broadcast",
 	},
 } as const;

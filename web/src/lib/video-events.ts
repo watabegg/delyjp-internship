@@ -2,7 +2,9 @@
 
 // Hot Reload耐性のあるグローバルなイベントストリーム管理
 declare global {
-	var videoClients: Map<string, ReadableStreamDefaultController> | undefined;
+	var videoClients:
+		| Map<string, Set<ReadableStreamDefaultController>>
+		| undefined;
 }
 
 const clients =
@@ -10,7 +12,7 @@ const clients =
 	(() => {
 		globalThis.videoClients = new Map<
 			string,
-			ReadableStreamDefaultController
+			Set<ReadableStreamDefaultController>
 		>();
 		return globalThis.videoClients;
 	})();
@@ -21,18 +23,27 @@ export function registerClient(
 	controller: ReadableStreamDefaultController,
 ) {
 	console.log(`[SSE LIB] クライアント登録: ${recipeId}`);
-	console.log(`[SSE LIB] 登録前のクライアント数: ${clients.size}`);
-	clients.set(recipeId, controller);
-	console.log(`[SSE LIB] 登録後のクライアント数: ${clients.size}`);
-	console.log(
-		`[SSE LIB] 登録されたクライアントIDs:`,
-		Array.from(clients.keys()),
-	);
+	const set =
+		clients.get(recipeId) ?? new Set<ReadableStreamDefaultController>();
+	set.add(controller);
+	clients.set(recipeId, set);
+	console.log(`[SSE LIB] 現在のクライアント数(recipeId単位): ${set.size}`);
 }
 
 // クライアントを削除
-export function unregisterClient(recipeId: string) {
-	clients.delete(recipeId);
+export function unregisterClient(
+	recipeId: string,
+	controller?: ReadableStreamDefaultController,
+) {
+	if (!clients.has(recipeId)) return;
+	if (controller) {
+		const set = clients.get(recipeId);
+		if (!set) return;
+		set.delete(controller);
+		if (set.size === 0) clients.delete(recipeId);
+	} else {
+		clients.delete(recipeId);
+	}
 }
 
 // ビデオ制御イベントを特定のクライアントに送信する関数
@@ -44,38 +55,30 @@ export function sendVideoControlEvent(
 		message: string;
 	},
 ) {
-	console.log(`[SSE] sendVideoControlEvent呼び出し: ${recipeId}`);
-	console.log(`[SSE] 登録されているクライアント数: ${clients.size}`);
-	console.log(
-		`[SSE] 登録されているクライアントIDs:`,
-		Array.from(clients.keys()),
-	);
-
-	const controller = clients.get(recipeId);
-	console.log(`[SSE] 対象クライアント見つかった: ${!!controller}`);
-
-	if (controller) {
-		try {
-			const eventData = {
-				type: "video-control",
-				recipeId,
-				...event,
-				timestamp: new Date().toISOString(),
-			};
-			const message = `data: ${JSON.stringify(eventData)}\n\n`;
-
-			console.log(`[SSE] 送信データ:`, eventData);
-			controller.enqueue(message);
-
-			console.log(`[SSE] イベント送信成功: ${recipeId} - ${event.instruction}`);
-			return true;
-		} catch (error) {
-			console.error(`[SSE] イベント送信エラー: ${error}`);
-			clients.delete(recipeId);
-			return false;
-		}
-	} else {
+	const set = clients.get(recipeId);
+	if (!set || set.size === 0) {
 		console.warn(`[SSE] クライアント未登録: ${recipeId}`);
 		return false;
 	}
+
+	const eventData = {
+		type: "video-control" as const,
+		recipeId,
+		...event,
+		timestamp: new Date().toISOString(),
+	};
+	const message = `data: ${JSON.stringify(eventData)}\n\n`;
+
+	let success = false;
+	for (const controller of set) {
+		try {
+			controller.enqueue(message);
+			success = true;
+		} catch (error) {
+			console.error(`[SSE] イベント送信エラー: ${error}`);
+			set.delete(controller);
+		}
+	}
+	if (set.size === 0) clients.delete(recipeId);
+	return success;
 }

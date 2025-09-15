@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import {
+	forwardRef,
+	useCallback,
+	useEffect,
+	useId,
+	useImperativeHandle,
+	useRef,
+	useState,
+} from "react";
 import Dialog from "./ui/Dialog";
 
 type TimerDialogProps = {
@@ -9,142 +17,178 @@ type TimerDialogProps = {
 	seconds: number;
 };
 
-export default function TimerDialog({
-	open,
-	onClose,
-	seconds,
-}: TimerDialogProps) {
-	const [time, setTime] = useState(seconds);
-	const totalRef = useRef(Math.max(1, seconds));
-	const dialogId = useId();
-	const [digitH, setDigitH] = useState<number>(96);
+export type TimerDialogHandle = {
+	stop: () => void; // カウント停止（保持）
+	reset: () => void; // 最初に戻して再開
+	restart: () => void; // 一時停止状態から再開
+};
 
-	// Keep latest seconds in a ref (and avoid division by zero)
-	useEffect(() => {
-		totalRef.current = Math.max(1, seconds);
-	}, [seconds]);
+const TimerDialog = forwardRef<TimerDialogHandle, TimerDialogProps>(
+	({ open, onClose, seconds }, ref) => {
+		const [time, setTime] = useState(seconds);
+		const totalRef = useRef(Math.max(1, seconds));
+		const dialogId = useId();
+		const [digitH, setDigitH] = useState<number>(96);
+		const intervalRef = useRef<number | null>(null);
 
-	useEffect(() => {
-		if (open) setTime(seconds);
-	}, [open, seconds]);
+		// Keep latest seconds in a ref (and avoid division by zero)
+		useEffect(() => {
+			totalRef.current = Math.max(1, seconds);
+		}, [seconds]);
 
-	// Ticking interval (stops at 0)
-	useEffect(() => {
-		if (!open) return;
-		const id = setInterval(() => {
-			setTime((t) => {
-				if (t <= 1) {
-					clearInterval(id);
-					return 0;
-				}
-				return t - 1;
-			});
-		}, 1000);
-		return () => clearInterval(id);
-	}, [open]);
+		useEffect(() => {
+			if (open) setTime(seconds);
+		}, [open, seconds]);
 
-	useEffect(() => {
-		if (time !== 0) return;
-		let ctx: AudioContext | null = null;
-		try {
-			ctx = new window.AudioContext();
-			const o = ctx.createOscillator();
-			const g = ctx.createGain();
-			o.type = "sine";
-			o.frequency.value = 1200;
-			o.connect(g);
-			g.connect(ctx.destination);
-			// Quick fade-in/out
-			const now = ctx.currentTime;
-			g.gain.setValueAtTime(0.0001, now);
-			g.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
-			g.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-			o.start(now);
-			o.stop(now + 0.4);
-			const t = setTimeout(() => ctx?.close().catch(() => {}), 600);
-			return () => clearTimeout(t);
-		} catch {
-			// ignore (autoplay restrictions or missing API)
-		}
-	}, [time]);
+		// Ticking interval helpers
+		const clearTick = useCallback(() => {
+			if (intervalRef.current != null) {
+				clearInterval(intervalRef.current);
+				intervalRef.current = null;
+			}
+		}, []);
 
-	const total = totalRef.current;
-	const safeTotal = total || 1;
-	const progress = Math.max(0, Math.min(1, time / safeTotal));
-	const mm = Math.floor(time / 60)
-		.toString()
-		.padStart(2, "0");
-	const ss = (time % 60).toString().padStart(2, "0");
+		const startTick = useCallback(() => {
+			if (intervalRef.current != null) return; // already ticking
+			if (!open) return;
+			const id = window.setInterval(() => {
+				setTime((t) => {
+					if (t <= 1) {
+						clearTick();
+						return 0;
+					}
+					return t - 1;
+				});
+			}, 1000);
+			intervalRef.current = id;
+		}, [clearTick, open]);
 
-	// Responsive digit height (avoid overflow on small screens)
-	useEffect(() => {
-		const update = () => {
-			const vw = typeof window !== "undefined" ? window.innerWidth : 390;
-			// roughly 28vw, clamped between 72px and 120px for better legibility
-			const h = Math.round(Math.max(72, Math.min(120, vw * 0.28)));
-			setDigitH(h);
-		};
-		update();
-		if (!open) return; // listen while open only
-		window.addEventListener("resize", update);
-		return () => window.removeEventListener("resize", update);
-	}, [open]);
+		useEffect(() => {
+			if (!open) return;
+			clearTick();
+			startTick();
+			return clearTick;
+		}, [open, clearTick, startTick]);
 
-	return (
-		<Dialog
-			id={dialogId}
-			title="タイマー"
-			open={open}
-			onClose={onClose}
-			className="w-full max-w-[min(92vw,24rem)] sm:max-w-md"
-			isCloseButton={time === 0}
-		>
-			<div>
-				{/* Device body */}
-				<div className="relative mx-auto w-full rounded-[1.5rem] border border-slate-200 bg-white py-4 px-1 shadow-[0_10px_25px_rgba(0,0,0,0.08),inset_0_2px_0_rgba(255,255,255,0.8)]">
-					{/* Brand */}
-					<div className="pb-2 text-center text-[0.8rem] font-black tracking-[0.2em] text-sky-700">
-						TIMER
-					</div>
+		useEffect(() => {
+			if (time !== 0) return;
+			let ctx: AudioContext | null = null;
+			try {
+				ctx = new window.AudioContext();
+				const o = ctx.createOscillator();
+				const g = ctx.createGain();
+				o.type = "sine";
+				o.frequency.value = 1200;
+				o.connect(g);
+				g.connect(ctx.destination);
+				// Quick fade-in/out
+				const now = ctx.currentTime;
+				g.gain.setValueAtTime(0.0001, now);
+				g.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
+				g.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+				o.start(now);
+				o.stop(now + 0.4);
+				const t = setTimeout(() => ctx?.close().catch(() => {}), 600);
+				return () => clearTimeout(t);
+			} catch {
+				// ignore (autoplay restrictions or missing API)
+			}
+		}, [time]);
 
-					{/* Display (Tanita-like) */}
-					<div className="relative mx-auto overflow-hidden rounded-2xl border border-slate-300 bg-slate-200/90 p-3 shadow-inner">
-						{/* Subtle progress bar (elapsed) */}
-						<div className="absolute inset-x-3 bottom-3 h-1.5 rounded-full bg-slate-300/70">
-							<div
-								className="h-full rounded-full bg-sky-400/70 transition-[width] duration-300"
-								style={{
-									width: `${Math.min(100, Math.max(0, (1 - progress) * 100))}%`,
-								}}
-								aria-hidden
-							/>
+		useImperativeHandle(ref, () => ({
+			stop: () => {
+				clearTick();
+			},
+			reset: () => {
+				clearTick();
+				setTime(totalRef.current);
+				startTick();
+			},
+			restart: () => {
+				startTick();
+			},
+		}));
+
+		const total = totalRef.current;
+		const safeTotal = total || 1;
+		const progress = Math.max(0, Math.min(1, time / safeTotal));
+		const mm = Math.floor(time / 60)
+			.toString()
+			.padStart(2, "0");
+		const ss = (time % 60).toString().padStart(2, "0");
+
+		// Responsive digit height (avoid overflow on small screens)
+		useEffect(() => {
+			const update = () => {
+				const vw = typeof window !== "undefined" ? window.innerWidth : 390;
+				// roughly 28vw, clamped between 72px and 120px for better legibility
+				const h = Math.round(Math.max(72, Math.min(120, vw * 0.28)));
+				setDigitH(h);
+			};
+			update();
+			if (!open) return; // listen while open only
+			window.addEventListener("resize", update);
+			return () => window.removeEventListener("resize", update);
+		}, [open]);
+
+		return (
+			<Dialog
+				id={dialogId}
+				title="タイマー"
+				open={open}
+				onClose={onClose}
+				className="w-full max-w-[min(92vw,24rem)] sm:max-w-md"
+				isCloseButton={time === 0}
+			>
+				<div>
+					{/* Device body */}
+					<div className="relative mx-auto w-full rounded-[1.5rem] border border-slate-200 bg-white py-4 px-1 shadow-[0_10px_25px_rgba(0,0,0,0.08),inset_0_2px_0_rgba(255,255,255,0.8)]">
+						{/* Brand */}
+						<div className="pb-2 text-center text-[0.8rem] font-black tracking-[0.2em] text-sky-700">
+							TIMER
 						</div>
 
-						{/* 7-seg digits */}
-						<div className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center px-1 pt-1 sm:gap-3 sm:px-2 sm:pt-2">
-							<div className="mx-auto flex gap-1 sm:gap-2">
-								<SevenSegDigit value={mm[0]} heightPx={digitH} />
-								<SevenSegDigit value={mm[1]} heightPx={digitH} />
+						{/* Display (Tanita-like) */}
+						<div className="relative mx-auto overflow-hidden rounded-2xl border border-slate-300 bg-slate-200/90 p-3 shadow-inner">
+							{/* Subtle progress bar (elapsed) */}
+							<div className="absolute inset-x-3 bottom-3 h-1.5 rounded-full bg-slate-300/70">
+								<div
+									className="h-full rounded-full bg-sky-400/70 transition-[width] duration-300"
+									style={{
+										width: `${Math.min(100, Math.max(0, (1 - progress) * 100))}%`,
+									}}
+									aria-hidden
+								/>
 							</div>
-							<Colon heightPx={digitH} />
-							<div className="mx-auto flex gap-1 sm:gap-2">
-								<SevenSegDigit value={ss[0]} heightPx={digitH} />
-								<SevenSegDigit value={ss[1]} heightPx={digitH} />
-							</div>
-						</div>
 
-						{/* 分・秒 labels */}
-						<div className="relative z-10 mt-1 grid grid-cols-[1fr_auto_1fr] items-center text-[0.7rem] sm:text-[0.75rem]">
-							<div className="text-center text-slate-600">分</div>
-							<div />
-							<div className="text-center text-slate-600">秒</div>
+							{/* 7-seg digits */}
+							<div className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center px-1 pt-1 sm:gap-3 sm:px-2 sm:pt-2">
+								<div className="mx-auto flex gap-1 sm:gap-2">
+									<SevenSegDigit value={mm[0]} heightPx={digitH} />
+									<SevenSegDigit value={mm[1]} heightPx={digitH} />
+								</div>
+								<Colon heightPx={digitH} />
+								<div className="mx-auto flex gap-1 sm:gap-2">
+									<SevenSegDigit value={ss[0]} heightPx={digitH} />
+									<SevenSegDigit value={ss[1]} heightPx={digitH} />
+								</div>
+							</div>
+
+							{/* 分・秒 labels */}
+							<div className="relative z-10 mt-1 grid grid-cols-[1fr_auto_1fr] items-center text-[0.7rem] sm:text-[0.75rem]">
+								<div className="text-center text-slate-600">分</div>
+								<div />
+								<div className="text-center text-slate-600">秒</div>
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-		</Dialog>
-	);
-}
+			</Dialog>
+		);
+	},
+);
+
+export default TimerDialog;
 
 // 7-segment like digit (CSS rectangles). Intentionally simple and responsive.
 function SevenSegDigit({
